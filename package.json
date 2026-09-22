@@ -6,6 +6,13 @@
     "apps/*",
     "packages/*"
   ],
-  "scripts": {},
-  "license": "UNLICENSED"
+  "scripts": {
+    "prisma:generate": "prisma generate --schema=database/prisma/schema.prisma",
+    "prisma:migrate": "prisma migrate dev --schema=database/prisma/schema.prisma",
+    "prisma:studio": "prisma studio --schema=database/prisma/schema.prisma"
+  },
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "prisma": "^6.19.3"
+  }
 }

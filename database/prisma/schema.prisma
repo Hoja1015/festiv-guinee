@@ -1,0 +1,222 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CUSTOMER
+  ORGANIZER
+  STAFF
+  ADMIN
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+enum TicketTypeName {
+  STANDARD
+  VIP
+  VVIP
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+enum PaymentProvider {
+  MOCK
+  ORANGE_MONEY
+  MTN_MOMO
+  CARD
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  CANCELLED
+}
+
+enum TicketStatus {
+  VALID
+  USED
+  CANCELLED
+}
+
+enum ScanResult {
+  VALID
+  ALREADY_USED
+  INVALID
+  WRONG_EVENT
+  CANCELLED
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String
+  fullName     String
+  phone        String?
+  role         UserRole @default(CUSTOMER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  eventsOrganized Event[]      @relation("OrganizerEvents")
+  orders          Order[]
+  staffAssignments EventStaff[]
+  scans           Scan[]
+
+  @@map("users")
+}
+
+model Event {
+  id          Int         @id @default(autoincrement())
+  organizerId Int
+  title       String
+  description String      @db.Text
+  imageUrl    String?
+  category    String
+  venue       String
+  city        String
+  date        DateTime
+  status      EventStatus @default(DRAFT)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  organizer   User         @relation("OrganizerEvents", fields: [organizerId], references: [id])
+  ticketTypes TicketType[]
+  staff       EventStaff[]
+    tickets     Ticket[]
+  scans       Scan[]
+
+  @@index([organizerId])
+  @@map("events")
+}
+
+model TicketType {
+  id                Int            @id @default(autoincrement())
+  eventId           Int
+  name              TicketTypeName
+  description       String?
+  priceGNF          Int
+  totalQuantity     Int
+  remainingQuantity Int
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  event      Event       @relation(fields: [eventId], references: [id])
+  orderItems OrderItem[]
+
+  @@index([eventId])
+  @@map("ticket_types")
+}
+
+model EventStaff {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  eventId   Int
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id])
+  event Event @relation(fields: [eventId], references: [id])
+
+  @@unique([userId, eventId])
+  @@map("event_staff")
+}
+
+model Order {
+  id             Int         @id @default(autoincrement())
+  customerId     Int
+  status         OrderStatus @default(PENDING)
+  totalAmountGNF Int
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  customer   User        @relation(fields: [customerId], references: [id])
+  orderItems OrderItem[]
+  payments   Payment[]
+
+  @@index([customerId])
+  @@map("orders")
+}
+
+model OrderItem {
+  id           Int      @id @default(autoincrement())
+  orderId      Int
+  ticketTypeId Int
+  quantity     Int
+  unitPriceGNF Int
+  createdAt    DateTime @default(now())
+
+  order      Order      @relation(fields: [orderId], references: [id])
+  ticketType TicketType @relation(fields: [ticketTypeId], references: [id])
+  tickets    Ticket[]
+
+  @@index([orderId])
+  @@index([ticketTypeId])
+  @@map("order_items")
+}
+
+model Payment {
+  id                Int             @id @default(autoincrement())
+  orderId           Int
+  provider          PaymentProvider
+  status            PaymentStatus   @default(PENDING)
+  amountGNF         Int
+  providerReference String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@map("payments")
+}
+
+model Ticket {
+  id          Int          @id @default(autoincrement())
+  orderItemId Int
+  eventId     Int
+  token       String       @unique
+  status      TicketStatus @default(VALID)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id])
+  event     Event     @relation(fields: [eventId], references: [id])
+  scans     Scan[]
+
+  @@index([orderItemId])
+  @@index([eventId])
+  @@map("tickets")
+}
+
+model Scan {
+  id        Int        @id @default(autoincrement())
+  ticketId  Int
+  eventId   Int
+  agentId   Int
+  result    ScanResult
+  scannedAt DateTime   @default(now())
+
+  ticket Ticket @relation(fields: [ticketId], references: [id])
+  event  Event  @relation(fields: [eventId], references: [id])
+  agent  User   @relation(fields: [agentId], references: [id])
+
+  @@index([ticketId])
+  @@index([eventId])
+  @@index([agentId])
+  @@map("scans")
+}
+
