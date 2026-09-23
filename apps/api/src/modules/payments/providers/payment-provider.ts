@@ -7,3 +7,4 @@ export interface PaymentChargeResult {
 export interface PaymentProvider {
   charge(params: { amountGNF: number; orderId: number }): Promise<PaymentChargeResult>
 }
+
