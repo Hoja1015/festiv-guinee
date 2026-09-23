@@ -4,6 +4,7 @@ import helmet from 'helmet'
 import cookieParser from 'cookie-parser'
 import { errorHandler } from './middlewares/error-handler.js'
 import { authRoutes } from './modules/auth/auth.routes.js'
+import { eventsRoutes } from './modules/events/events.routes.js'
 
 export function createApp() {
   const app = express()
@@ -23,6 +24,7 @@ export function createApp() {
   })
 
   app.use('/auth', authRoutes)
+  app.use('/events', eventsRoutes)
 
   app.use(errorHandler)
 
