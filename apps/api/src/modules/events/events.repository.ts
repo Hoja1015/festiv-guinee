@@ -3,8 +3,6 @@ import type { EventStatus } from '@prisma/client'
 import type { CreateEventInput, UpdateEventInput } from './events.schema.js'
 
 export const eventsRepository = {
-  // Liste publique : uniquement les événements publiés, triés par date croissante
-  // (les prochains événements en premier).
   findPublished() {
     return prisma.event.findMany({
       where: { status: 'PUBLISHED' },
@@ -13,7 +11,6 @@ export const eventsRepository = {
     })
   },
 
-  // Liste privée : tous les événements d'un organisateur, tous statuts confondus.
   findByOrganizer(organizerId: number) {
     return prisma.event.findMany({
       where: { organizerId },
@@ -46,6 +43,24 @@ export const eventsRepository = {
     return prisma.event.update({
       where: { id },
       data: { status },
+    })
+  },
+
+  // Affecte un agent (STAFF) à cet événement. upsert évite une erreur si
+  // l'organisateur clique deux fois sur "affecter" par erreur — la
+  // contrainte @@unique([userId, eventId]) fait le reste.
+  assignStaff(eventId: number, userId: number) {
+    return prisma.eventStaff.upsert({
+      where: { userId_eventId: { userId, eventId } },
+      create: { userId, eventId },
+      update: {},
+    })
+  },
+
+  listStaff(eventId: number) {
+    return prisma.eventStaff.findMany({
+      where: { eventId },
+      include: { user: { select: { id: true, fullName: true, email: true } } },
     })
   },
 }

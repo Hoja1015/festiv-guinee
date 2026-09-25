@@ -72,10 +72,10 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  eventsOrganized Event[]      @relation("OrganizerEvents")
-  orders          Order[]
+  eventsOrganized  Event[]      @relation("OrganizerEvents")
+  orders           Order[]
   staffAssignments EventStaff[]
-  scans           Scan[]
+  scans            Scan[]
 
   @@map("users")
 }
@@ -97,7 +97,7 @@ model Event {
   organizer   User         @relation("OrganizerEvents", fields: [organizerId], references: [id])
   ticketTypes TicketType[]
   staff       EventStaff[]
-    tickets     Ticket[]
+  tickets     Ticket[]
   scans       Scan[]
 
   @@index([organizerId])
@@ -185,13 +185,14 @@ model Payment {
 }
 
 model Ticket {
-  id          Int          @id @default(autoincrement())
-  orderItemId Int
-  eventId     Int
-  token       String       @unique
-  status      TicketStatus @default(VALID)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id             Int          @id @default(autoincrement())
+  orderItemId    Int
+  eventId        Int
+  token          String       @unique
+  tokenEncrypted String       @db.Text
+  status         TicketStatus @default(VALID)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   orderItem OrderItem @relation(fields: [orderItemId], references: [id])
   event     Event     @relation(fields: [eventId], references: [id])
@@ -219,4 +220,3 @@ model Scan {
   @@index([agentId])
   @@map("scans")
 }
-

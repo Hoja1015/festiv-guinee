@@ -1,5 +1,6 @@
 import { eventsRepository } from './events.repository.js'
 import { NotFoundError, ForbiddenError, ValidationError } from '../../shared/errors.js'
+import { prisma } from '../../lib/prisma.js'
 import type { CreateEventInput, UpdateEventInput } from './events.schema.js'
 
 export const eventsService = {
@@ -23,9 +24,6 @@ export const eventsService = {
     return eventsRepository.create(organizerId, input)
   },
 
-  // Vérifie que l'événement existe ET appartient bien à cet organisateur.
-  // Réutilisée par update() et publish() ci-dessous — on ne veut pas
-  // dupliquer cette vérification de sécurité à chaque méthode.
   async assertOwnership(eventId: number, organizerId: number) {
     const event = await eventsRepository.findById(eventId)
 
@@ -34,10 +32,6 @@ export const eventsService = {
     }
 
     if (event.organizerId !== organizerId) {
-      // On renvoie la même erreur générique que "n'existe pas" serait trop
-      // (ici un vrai 403 est acceptable, contrairement au login) : ça confirme
-      // au moins que l'événement existe, ce qui est un moindre risque que
-      // pour des identifiants de connexion.
       throw new ForbiddenError('Vous n\'êtes pas propriétaire de cet événement')
     }
 
@@ -62,5 +56,25 @@ export const eventsService = {
   async cancel(eventId: number, organizerId: number) {
     await this.assertOwnership(eventId, organizerId)
     return eventsRepository.updateStatus(eventId, 'CANCELLED')
+  },
+
+  async assignStaff(eventId: number, organizerId: number, staffUserId: number) {
+    await this.assertOwnership(eventId, organizerId)
+
+    // Vérifie que l'utilisateur qu'on affecte a bien le rôle STAFF —
+    // évite d'affecter par erreur un CUSTOMER ou un autre ORGANIZER.
+    const user = await prisma.user.findUnique({ where: { id: staffUserId } })
+    if (!user) {
+      throw new NotFoundError('Utilisateur')
+    }
+    if (user.role !== 'STAFF') {
+      throw new ValidationError('Cet utilisateur n\'a pas le rôle STAFF')
+    }
+
+    return eventsRepository.assignStaff(eventId, staffUserId)
+  },
+
+  listStaff(eventId: number) {
+    return eventsRepository.listStaff(eventId)
   },
 }
