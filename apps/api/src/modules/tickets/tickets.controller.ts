@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express'
 import QRCode from 'qrcode'
-import { ticketsService } from '../tickets/tickets.service.js'
+import { ticketsService } from './tickets.service.js'
 
 export const ticketsController = {
   async listMine(req: Request, res: Response) {
@@ -8,9 +8,6 @@ export const ticketsController = {
     res.json({ tickets })
   },
 
-  // Génère et renvoie directement l'image PNG du QR code pour un billet.
-  // Le token en clair n'est JAMAIS exposé dans du JSON classique — seulement
-  // encodé visuellement dans l'image, comme un vrai billet.
   async getQrCode(req: Request, res: Response) {
     const plainToken = await ticketsService.getPlainToken(
       Number(req.params.id),
@@ -22,9 +19,12 @@ export const ticketsController = {
       width: 400,
     })
 
+    // Autorise le chargement de cette image depuis une autre origine
+    // (notre frontend sur :5173) — Helmet bloque ça par défaut (CORP:
+    // same-origin), ce qui est une bonne protection générale, mais empêche
+    // ici notre propre <img src="..."> légitime de fonctionner.
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin')
     res.setHeader('Content-Type', 'image/png')
     res.send(qrPngBuffer)
   },
 }
-
-

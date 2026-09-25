@@ -1,47 +1,20 @@
-import { Routes, Route } from 'react-router-dom'
-import { ThemeToggle } from './components/ThemeToggle'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthPage } from './pages/AuthPage'
-import { useAuth } from './contexts/AuthContext'
-
-function HomePage() {
-  const { user, isLoading, logout } = useAuth()
-
-  return (
-    <div className="min-h-screen bg-bg transition-colors">
-      <header className="p-4 flex justify-between items-center border-b border-ink/10">
-        <h1 className="font-display text-xl font-semibold text-ink">Festiv'Guinée 🎟️</h1>
-        <div className="flex items-center gap-4">
-          <ThemeToggle />
-          {user && (
-            <button onClick={() => logout()} className="text-sm text-muted hover:text-ink">
-              Déconnexion
-            </button>
-          )}
-        </div>
-      </header>
-
-      <main className="p-8">
-        {isLoading ? (
-          <p className="text-muted">Chargement...</p>
-        ) : user ? (
-          <p className="text-ink">Connecté en tant que {user.fullName} ({user.role})</p>
-        ) : (
-          <div className="space-x-4">
-            <a href="/login" className="text-accent underline">Se connecter</a>
-            <a href="/register" className="text-accent underline">Créer un compte</a>
-          </div>
-        )}
-      </main>
-    </div>
-  )
-}
+import { EventsPage } from './pages/EventsPage'
+import { EventDetailPage } from './pages/EventDetailPage'
+import { OrderPage } from './pages/OrderPage'
+import { TicketsPage } from './pages/TicketsPage'
 
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<HomePage />} />
+      <Route path="/" element={<EventsPage />} />
+      <Route path="/events/:id" element={<EventDetailPage />} />
+      <Route path="/orders/:id" element={<OrderPage />} />
+      <Route path="/tickets" element={<TicketsPage />} />
       <Route path="/login" element={<AuthPage initialMode="login" />} />
       <Route path="/register" element={<AuthPage initialMode="register" />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }
