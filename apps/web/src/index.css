@@ -1,3 +1,44 @@
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-ink: #0F1B2E;
+  --color-bg: #FFFBF5;
+  --color-surface: #FFFFFF;
+  --color-accent: #E8A72E;
+  --color-accent-2: #D64550;
+  --color-success: #1B8A6B;
+  --color-muted: #6B7280;
+
+  --font-display: "Fraunces", serif;
+  --font-body: "Inter", sans-serif;
+}
+
+:root:not([data-theme="light"]) {
+  @media (prefers-color-scheme: dark) {
+    --color-ink: #FFFBF5;
+    --color-bg: #0F1B2E;
+    --color-surface: #16273F;
+    --color-muted: #9CA3AF;
+  }
+}
+
+.dark {
+  --color-ink: #FFFBF5;
+  --color-bg: #0F1B2E;
+  --color-surface: #16273F;
+  --color-muted: #9CA3AF;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+}
+
+/* Le dégradé "signature" de la marque — un seul endroit à modifier pour
+   changer le dégradé PARTOUT où .gradient-brand est utilisé. */
+.gradient-brand {
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-2) 100%);
+}
