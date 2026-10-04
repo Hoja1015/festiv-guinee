@@ -79,3 +79,27 @@ export function OrganizerLayout({ children }: { children: ReactNode }) {
     </div>
   )
 }
+
+
+
+
+
+
+
+
+
+
+
+git commit -m "
+
+feat: ajoute confirmation, billets client, dashboard et participants organisateur
+
+- Écran 6 : page de confirmation de paiement (succès/échec)
+- Écran 7 : liste des billets du client avec QR code réel
+- Corrige le blocage CORP qui empêchait l'affichage du QR code
+- Ajoute la redirection post-connexion selon le rôle (organisateur/agent)
+- Écran 9 : dashboard organisateur (billets vendus, revenus, taux de remplissage)
+- Ajoute la liste des participants par événement, triée par ordre alphabétique,
+  exportable en CSV (solution de secours si le scan QR échoue)
+
+"
