@@ -22,9 +22,15 @@ export const ticketsController = {
       width: 400,
     })
 
+    // Le front (Vite, port 5173) et l'API (port 4000) sont sur la même "site"
+    // (localhost) mais des origines différentes : par défaut, helmet pose
+    // Cross-Origin-Resource-Policy: same-origin, ce qui bloque le <img src>
+    // malgré un cookie et une requête valides (ERR_BLOCKED_BY_RESPONSE).
+    // On assouplit uniquement cette route, qui ne renvoie qu'une image
+    // publique-au-titulaire-du-cookie, pas une route sensible en JSON.
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin')
     res.setHeader('Content-Type', 'image/png')
     res.send(qrPngBuffer)
   },
 }
-
 

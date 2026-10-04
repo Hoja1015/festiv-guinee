@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { paymentsController } from './payments.controller'
+import { paymentsController } from '../payments/payments.controller.js'
 import { requireAuth } from '../../middlewares/auth.js'
 
 export const paymentsRoutes = Router({ mergeParams: true })

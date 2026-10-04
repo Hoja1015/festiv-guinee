@@ -45,4 +45,28 @@ export const ticketsRepository = {
   findByTokenHash(tokenHash: string) {
     return prisma.ticket.findUnique({ where: { token: tokenHash } })
   },
+
+  // Tous les billets vendus pour un événement, avec l'acheteur — pour la
+  // liste de secours de l'organisateur (si le scan QR ne marche pas).
+  // Tri alphabétique fait directement en base, sur le nom de l'acheteur.
+  findByEvent(eventId: number) {
+    return prisma.ticket.findMany({
+      where: { eventId },
+      include: {
+        orderItem: {
+          include: {
+            ticketType: true,
+            order: {
+              include: {
+                customer: { select: { id: true, fullName: true, email: true } },
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        orderItem: { order: { customer: { fullName: 'asc' } } },
+      },
+    })
+  },
 }

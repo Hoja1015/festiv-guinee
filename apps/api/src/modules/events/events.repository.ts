@@ -11,6 +11,24 @@ export const eventsRepository = {
     })
   },
 
+  // Événements passés ayant réellement vendu des billets, du plus vendu
+  // au moins vendu — sert de "preuve sociale" sur l'accueil. `tickets: { some: {} }`
+  // exclut les événements passés sans aucune vente (pas de carte à 0 billet).
+  findPastHighlights(limit: number) {
+    return prisma.event.findMany({
+      where: {
+        status: 'PUBLISHED',
+        date: { lt: new Date() },
+        tickets: { some: {} },
+      },
+      orderBy: { tickets: { _count: 'desc' } },
+      take: limit,
+      include: {
+        _count: { select: { tickets: true } },
+      },
+    })
+  },
+
   findByOrganizer(organizerId: number) {
     return prisma.event.findMany({
       where: { organizerId },

@@ -1,4 +1,5 @@
 import { eventsRepository } from './events.repository.js'
+import { ticketsService } from '../tickets/tickets.service.js'
 import { NotFoundError, ForbiddenError, ValidationError } from '../../shared/errors.js'
 import { prisma } from '../../lib/prisma.js'
 import type { CreateEventInput, UpdateEventInput } from './events.schema.js'
@@ -6,6 +7,20 @@ import type { CreateEventInput, UpdateEventInput } from './events.schema.js'
 export const eventsService = {
   listPublished() {
     return eventsRepository.findPublished()
+  },
+
+  async listPastHighlights(limit: number) {
+    const events = await eventsRepository.findPastHighlights(limit)
+    return events.map((event) => ({
+      id: event.id,
+      title: event.title,
+      imageUrl: event.imageUrl,
+      category: event.category,
+      venue: event.venue,
+      city: event.city,
+      date: event.date,
+      ticketsSold: event._count.tickets,
+    }))
   },
 
   listMine(organizerId: number) {
@@ -61,8 +76,6 @@ export const eventsService = {
   async assignStaff(eventId: number, organizerId: number, staffUserId: number) {
     await this.assertOwnership(eventId, organizerId)
 
-    // Vérifie que l'utilisateur qu'on affecte a bien le rôle STAFF —
-    // évite d'affecter par erreur un CUSTOMER ou un autre ORGANIZER.
     const user = await prisma.user.findUnique({ where: { id: staffUserId } })
     if (!user) {
       throw new NotFoundError('Utilisateur')
@@ -76,5 +89,12 @@ export const eventsService = {
 
   listStaff(eventId: number) {
     return eventsRepository.listStaff(eventId)
+  },
+
+  // Liste des acheteurs d'un événement — réservé à son organisateur, qui
+  // peut la télécharger comme filet de sécurité si le scan QR ne marche pas.
+  async listParticipants(eventId: number, organizerId: number) {
+    await this.assertOwnership(eventId, organizerId)
+    return ticketsService.listForEvent(eventId)
   },
 }

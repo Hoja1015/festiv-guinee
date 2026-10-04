@@ -5,6 +5,7 @@ import { requireAuth, requireRole } from '../../middlewares/auth.js'
 export const eventsRoutes = Router()
 
 eventsRoutes.get('/', eventsController.listPublished)
+eventsRoutes.get('/highlights', eventsController.listPastHighlights)
 
 eventsRoutes.get('/mine', requireAuth, requireRole('ORGANIZER'), eventsController.listMine)
 eventsRoutes.post('/', requireAuth, requireRole('ORGANIZER'), eventsController.create)
@@ -13,5 +14,11 @@ eventsRoutes.post('/:id/publish', requireAuth, requireRole('ORGANIZER'), eventsC
 eventsRoutes.post('/:id/cancel', requireAuth, requireRole('ORGANIZER'), eventsController.cancel)
 eventsRoutes.post('/:id/staff', requireAuth, requireRole('ORGANIZER'), eventsController.assignStaff)
 eventsRoutes.get('/:id/staff', requireAuth, requireRole('ORGANIZER'), eventsController.listStaff)
+eventsRoutes.get(
+  '/:id/participants',
+  requireAuth,
+  requireRole('ORGANIZER'),
+  eventsController.listParticipants
+)
 
 eventsRoutes.get('/:id', eventsController.getById)

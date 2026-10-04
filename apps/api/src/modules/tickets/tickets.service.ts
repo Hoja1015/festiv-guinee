@@ -67,4 +67,19 @@ export const ticketsService = {
 
     return decryptToken(ticket.tokenEncrypted)
   },
+
+  // Liste des acheteurs d'un événement, triée par nom — filet de sécurité
+  // papier/CSV si le scan QR est indisponible. L'appelant (events.service)
+  // est responsable de vérifier que l'organisateur possède bien l'événement.
+  async listForEvent(eventId: number) {
+    const tickets = await ticketsRepository.findByEvent(eventId)
+
+    return tickets.map((t) => ({
+      ticketId: t.id,
+      status: t.status,
+      customerName: t.orderItem.order.customer.fullName,
+      customerEmail: t.orderItem.order.customer.email,
+      ticketType: t.orderItem.ticketType.name,
+    }))
+  },
 }

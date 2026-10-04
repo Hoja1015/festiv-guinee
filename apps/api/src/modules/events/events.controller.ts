@@ -9,6 +9,13 @@ export const eventsController = {
     res.json({ events })
   },
 
+  async listPastHighlights(req: Request, res: Response) {
+    const limitParam = req.query.limit
+    const limit = typeof limitParam === 'string' ? Number(limitParam) : 6
+    const events = await eventsService.listPastHighlights(Number.isFinite(limit) ? limit : 6)
+    res.json({ events })
+  },
+
   async listMine(req: Request, res: Response) {
     const events = await eventsService.listMine(req.user!.userId)
     res.json({ events })
@@ -54,5 +61,13 @@ export const eventsController = {
   async listStaff(req: Request, res: Response) {
     const staff = await eventsService.listStaff(Number(req.params.id))
     res.json({ staff })
+  },
+
+  async listParticipants(req: Request, res: Response) {
+    const participants = await eventsService.listParticipants(
+      Number(req.params.id),
+      req.user!.userId
+    )
+    res.json({ participants })
   },
 }
