@@ -12,6 +12,8 @@ import { OrganizerEventsPage } from './pages/organizer/OrganizerEventsPage'
 import { CreateEventPage, EditEventPage } from './pages/organizer/CreateEventPage'
 import { ParticipantsPage } from './pages/organizer/ParticipantsPage'
 import { PublicationsPage } from './pages/organizer/PublicationsPage'
+import { SalesPage } from './pages/organizer/SalesPage'
+import { AttendancePage } from './pages/organizer/AttendancePage'
 import { PostPage } from './pages/PostPage'
 import { AgentHomePage } from './pages/agent/AgentHomePage'
 import { ScanPage } from './pages/agent/ScanPage'
@@ -103,6 +105,22 @@ function AppShell() {
           element={
             <RequireRole roles={['ORGANIZER']}>
               <EditEventPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/organisateur/scans"
+          element={
+            <RequireRole roles={['ORGANIZER']}>
+              <AttendancePage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/organisateur/ventes"
+          element={
+            <RequireRole roles={['ORGANIZER']}>
+              <SalesPage />
             </RequireRole>
           }
         />

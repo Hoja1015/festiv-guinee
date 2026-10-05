@@ -14,9 +14,10 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Tableau de bord', to: '/organisateur', enabled: true },
   { label: 'Événements', to: '/organisateur/evenements', enabled: true },
   { label: 'Billets', to: '#', enabled: false },
-  { label: 'Ventes', to: '#', enabled: false },
+  { label: 'Ventes', to: '/organisateur/ventes', enabled: true },
   { label: 'Participants', to: '/organisateur/participants', enabled: true },
-  { label: 'Scans', to: '#', enabled: false },
+  { label: 'Publications', to: '/organisateur/publications', enabled: true },
+  { label: 'Scans', to: '/organisateur/scans', enabled: true },
 ]
 
 export function OrganizerLayout({ children }: { children: ReactNode }) {
