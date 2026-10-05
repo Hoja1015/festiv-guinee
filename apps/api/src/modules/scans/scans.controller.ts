@@ -8,4 +8,9 @@ export const scansController = {
     const result = await scansService.scan(req.user!.userId, input.eventId, input.token)
     res.json(result)
   },
+
+  async listMyEvents(req: Request, res: Response) {
+    const events = await scansService.listMyEvents(req.user!.userId)
+    res.json({ events })
+  },
 }

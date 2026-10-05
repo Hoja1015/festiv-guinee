@@ -72,10 +72,13 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  eventsOrganized  Event[]      @relation("OrganizerEvents")
+  eventsOrganized  Event[]       @relation("OrganizerEvents")
   orders           Order[]
   staffAssignments EventStaff[]
   scans            Scan[]
+  posts            Post[]
+  postLikes        PostLike[]
+  postComments     PostComment[]
 
   @@map("users")
 }
@@ -99,6 +102,7 @@ model Event {
   staff       EventStaff[]
   tickets     Ticket[]
   scans       Scan[]
+  posts       Post[]
 
   @@index([organizerId])
   @@map("events")
@@ -219,4 +223,55 @@ model Scan {
   @@index([eventId])
   @@index([agentId])
   @@map("scans")
+}
+
+// Publication d'un organisateur sur le fil d'actualité de l'accueil.
+// `eventId` est optionnel : une annonce peut être liée à un événement publié.
+model Post {
+  id        Int      @id @default(autoincrement())
+  authorId  Int
+  eventId   Int?
+  content   String   @db.Text
+  imageUrl  String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  author   User          @relation(fields: [authorId], references: [id])
+  event    Event?        @relation(fields: [eventId], references: [id])
+  likes    PostLike[]
+  comments PostComment[]
+
+  @@index([authorId])
+  @@index([eventId])
+  @@map("posts")
+}
+
+// Un like par utilisateur et par publication (garanti par la contrainte unique).
+model PostLike {
+  id        Int      @id @default(autoincrement())
+  postId    Int
+  userId    Int
+  createdAt DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([postId, userId])
+  @@index([userId])
+  @@map("post_likes")
+}
+
+model PostComment {
+  id        Int      @id @default(autoincrement())
+  postId    Int
+  userId    Int
+  content   String   @db.VarChar(1000)
+  createdAt DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([postId, createdAt])
+  @@index([userId])
+  @@map("post_comments")
 }

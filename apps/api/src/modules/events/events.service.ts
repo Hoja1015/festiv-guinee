@@ -54,7 +54,14 @@ export const eventsService = {
   },
 
   async update(eventId: number, organizerId: number, input: UpdateEventInput) {
-    await this.assertOwnership(eventId, organizerId)
+    const event = await this.assertOwnership(eventId, organizerId)
+
+    // Les types de billets ne se remplacent que sur un brouillon : une fois
+    // publié, des commandes peuvent y être rattachées.
+    if (input.ticketTypes && event.status !== 'DRAFT') {
+      throw new ValidationError('Les billets ne sont modifiables que sur un brouillon')
+    }
+
     return eventsRepository.update(eventId, input)
   },
 

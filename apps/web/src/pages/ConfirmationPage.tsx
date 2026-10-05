@@ -1,4 +1,6 @@
+import { useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { clearCart } from '../lib/cartStore'
 import { ticketTypeLabel } from '../lib/ticketType'
 import type { PaymentResult } from '../hooks/useOrders'
 
@@ -30,6 +32,12 @@ export function ConfirmationPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const state = location.state as ConfirmationLocationState | null
+
+  // Commande payée : le panier est vidé.
+  const paid = state?.payment.success === true
+  useEffect(() => {
+    if (paid) clearCart()
+  }, [paid])
 
   // Cet écran n'a de sens qu'en sortie du tunnel de paiement — pas d'accès direct.
   if (!state) {

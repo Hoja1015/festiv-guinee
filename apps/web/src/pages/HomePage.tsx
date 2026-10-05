@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Logo } from '../components/Logo'
+import { Feed } from '../components/posts/Feed'
 import { usePastHighlights } from '../hooks/useEvents'
 import type { PastHighlightEvent } from '../lib/api'
 
@@ -48,6 +49,7 @@ export function HomePage() {
       </div>
 
       <PastHighlightsSection />
+      <Feed />
     </div>
   )
 }

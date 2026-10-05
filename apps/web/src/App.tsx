@@ -6,11 +6,18 @@ import { CartPage } from './pages/CartPage'
 import { AuthPage } from './pages/AuthPage'
 import { PaymentPage } from './pages/PaymentPage'
 import { ConfirmationPage } from './pages/ConfirmationPage'
-import { TicketsPage } from './pages/Ticketspage'
+import { TicketsPage } from './pages/TicketsPage'
 import { OrganizerDashboardPage } from './pages/organizer/DashboardPage'
+import { OrganizerEventsPage } from './pages/organizer/OrganizerEventsPage'
+import { CreateEventPage, EditEventPage } from './pages/organizer/CreateEventPage'
 import { ParticipantsPage } from './pages/organizer/ParticipantsPage'
+import { PublicationsPage } from './pages/organizer/PublicationsPage'
+import { PostPage } from './pages/PostPage'
+import { AgentHomePage } from './pages/agent/AgentHomePage'
+import { ScanPage } from './pages/agent/ScanPage'
 import { MobileNav } from './components/MobileNav'
 import { TopNav } from './components/TopNav'
+import { Footer } from './components/Footer'
 import { RequireAuth } from './components/RequireAuth'
 import { RequireRole } from './components/RequireRole'
 
@@ -30,9 +37,10 @@ function AppShell() {
     location.pathname.startsWith('/organisateur') || location.pathname.startsWith('/agent')
 
   return (
-    <div className={isBackoffice ? '' : 'min-h-screen bg-white pb-20 md:pb-0'}>
+    <div className={isBackoffice ? '' : 'flex min-h-screen flex-col bg-white'}>
       {!isBackoffice && <TopNav />}
 
+      <main className={isBackoffice ? '' : 'flex-1'}>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/evenements" element={<EventsPage />} />
@@ -63,6 +71,7 @@ function AppShell() {
             </RequireAuth>
           }
         />
+        <Route path="/publications/:id" element={<PostPage />} />
         <Route path="/compte" element={<ComingSoon title="Compte" />} />
 
         <Route
@@ -77,7 +86,31 @@ function AppShell() {
           path="/organisateur/evenements"
           element={
             <RequireRole roles={['ORGANIZER']}>
-              <ComingSoon title="Événements (organisateur)" />
+              <OrganizerEventsPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/organisateur/evenements/nouveau"
+          element={
+            <RequireRole roles={['ORGANIZER']}>
+              <CreateEventPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/organisateur/evenements/:id/modifier"
+          element={
+            <RequireRole roles={['ORGANIZER']}>
+              <EditEventPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/organisateur/publications"
+          element={
+            <RequireRole roles={['ORGANIZER']}>
+              <PublicationsPage />
             </RequireRole>
           }
         />
@@ -89,8 +122,27 @@ function AppShell() {
             </RequireRole>
           }
         />
-      </Routes>
 
+        <Route
+          path="/agent"
+          element={
+            <RequireRole roles={['STAFF', 'ADMIN']}>
+              <AgentHomePage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/agent/scan/:eventId"
+          element={
+            <RequireRole roles={['STAFF', 'ADMIN']}>
+              <ScanPage />
+            </RequireRole>
+          }
+        />
+      </Routes>
+      </main>
+
+      {!isBackoffice && <Footer />}
       {!isBackoffice && <MobileNav />}
     </div>
   )

@@ -1,5 +1,6 @@
 import { prisma } from '../../lib/prisma.js'
 import type { EventStatus } from '@prisma/client'
+import { ValidationError } from '../../shared/errors.js'
 import type { CreateEventInput, UpdateEventInput } from './events.schema.js'
 
 export const eventsRepository = {
@@ -44,16 +45,61 @@ export const eventsRepository = {
     })
   },
 
-  create(organizerId: number, data: CreateEventInput) {
+  // Création imbriquée : l'événement et ses types de billets sont écrits dans
+  // la même requête (atomique) — impossible de se retrouver avec un événement
+  // sans billets si l'un d'eux est invalide. Au départ, tout le stock est
+  // disponible : remainingQuantity = totalQuantity.
+  create(organizerId: number, input: CreateEventInput) {
+    const { ticketTypes, ...eventData } = input
+
     return prisma.event.create({
-      data: { ...data, organizerId },
+      data: {
+        ...eventData,
+        organizerId,
+        ticketTypes: {
+          create: ticketTypes.map((tt) => ({
+            ...tt,
+            remainingQuantity: tt.totalQuantity,
+          })),
+        },
+      },
+      include: { ticketTypes: true },
     })
   },
 
+  // Sans `ticketTypes` : simple mise à jour des champs de l'événement.
+  // Avec `ticketTypes` : la liste est remplacée dans une transaction. On
+  // refuse si un billet a déjà été commandé (sinon la suppression casserait
+  // les commandes existantes).
   update(id: number, data: UpdateEventInput) {
-    return prisma.event.update({
-      where: { id },
-      data,
+    const { ticketTypes, ...eventData } = data
+
+    if (!ticketTypes) {
+      return prisma.event.update({
+        where: { id },
+        data: eventData,
+        include: { ticketTypes: true },
+      })
+    }
+
+    return prisma.$transaction(async (tx) => {
+      const ordered = await tx.orderItem.count({ where: { ticketType: { eventId: id } } })
+      if (ordered > 0) {
+        throw new ValidationError('Des billets ont déjà été commandés : impossible de les modifier')
+      }
+
+      await tx.ticketType.deleteMany({ where: { eventId: id } })
+
+      return tx.event.update({
+        where: { id },
+        data: {
+          ...eventData,
+          ticketTypes: {
+            create: ticketTypes.map((tt) => ({ ...tt, remainingQuantity: tt.totalQuantity })),
+          },
+        },
+        include: { ticketTypes: true },
+      })
     })
   },
 

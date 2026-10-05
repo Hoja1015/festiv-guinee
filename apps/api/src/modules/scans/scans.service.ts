@@ -3,6 +3,18 @@ import { hashToken } from '../../lib/tokens.js'
 import { ForbiddenError } from '../../shared/errors.js'
 import type { ScanResult } from '@prisma/client'
 
+type ScannedTicket = NonNullable<Awaited<ReturnType<typeof scansRepository.findTicketByTokenHash>>>
+
+// Ce que l'agent voit après un scan. Volontairement minimal : nom + type,
+// jamais l'email ni le token.
+function describeTicket(ticket: ScannedTicket) {
+  return {
+    id: ticket.id,
+    ticketType: ticket.orderItem.ticketType.name,
+    holderName: ticket.orderItem.order.customer.fullName,
+  }
+}
+
 export const scansService = {
   async scan(agentId: number, eventId: number, token: string) {
     // 1. Sécurité d'abord : l'agent doit être affecté à CET événement précis.
@@ -24,7 +36,8 @@ export const scansService = {
       return { result: 'INVALID' as ScanResult }
     }
 
-    // 4. Le billet existe mais appartient à un AUTRE événement.
+    // 4. Le billet existe mais appartient à un AUTRE événement. On ne renvoie
+    // aucun détail : ce billet n'a rien à faire dans cet événement.
     if (ticket.eventId !== eventId) {
       await scansRepository.createScan({
         ticketId: ticket.id,
@@ -43,7 +56,7 @@ export const scansService = {
         agentId,
         result: 'CANCELLED',
       })
-      return { result: 'CANCELLED' as ScanResult }
+      return { result: 'CANCELLED' as ScanResult, ticket: describeTicket(ticket) }
     }
 
     // 6. Déjà scanné (sans passer par l'étape atomique, on sait déjà
@@ -55,7 +68,12 @@ export const scansService = {
         agentId,
         result: 'ALREADY_USED',
       })
-      return { result: 'ALREADY_USED' as ScanResult }
+      const firstScan = await scansRepository.findFirstValidScan(ticket.id)
+      return {
+        result: 'ALREADY_USED' as ScanResult,
+        ticket: describeTicket(ticket),
+        usedAt: firstScan?.scannedAt,
+      }
     }
 
     // 7. Le billet est VALID : tentative de validation ATOMIQUE.
@@ -72,6 +90,27 @@ export const scansService = {
       result,
     })
 
-    return { result }
+    if (success) {
+      return { result, ticket: describeTicket(ticket) }
+    }
+
+    // Course perdue contre un autre agent : le premier scan est peut-être
+    // encore en cours d'écriture, `usedAt` peut donc être absent.
+    const firstScan = await scansRepository.findFirstValidScan(ticket.id)
+    return { result, ticket: describeTicket(ticket), usedAt: firstScan?.scannedAt }
+  },
+
+  // Événements affectés à l'agent connecté, pour l'écran de choix.
+  async listMyEvents(agentId: number) {
+    const assignments = await scansRepository.listAssignedEvents(agentId)
+    return assignments.map(({ event }) => ({
+      id: event.id,
+      title: event.title,
+      imageUrl: event.imageUrl,
+      venue: event.venue,
+      city: event.city,
+      date: event.date,
+      status: event.status,
+    }))
   },
 }

@@ -1,21 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useEvent } from '../hooks/useEvents'
 import { ticketTypeBadgeColor, ticketTypeLabel } from '../lib/ticketType'
 import { MinusIcon, PlusIcon, TrashIcon, StarIcon } from '../components/icons'
-
-interface CartSelectionItem {
-  ticketTypeId: number
-  name: 'STANDARD' | 'VIP' | 'VVIP'
-  priceGNF: number
-  quantity: number
-}
-
-interface CartLocationState {
-  eventId: number
-  eventTitle: string
-  selection: CartSelectionItem[]
-}
+import { clearCart, getCart, saveCart, type CartData } from '../lib/cartStore'
 
 const dateFormatter = new Intl.DateTimeFormat('fr-FR', {
   day: '2-digit',
@@ -28,7 +16,10 @@ const priceFormatter = new Intl.NumberFormat('fr-FR')
 export function CartPage() {
   const location = useLocation()
   const navigate = useNavigate()
-  const initialState = location.state as CartLocationState | null
+  // Source du panier : sélection transmise par la page événement, sinon panier sauvegardé.
+  const [initialState] = useState<CartData | null>(
+    () => (location.state as CartData | null) ?? getCart()
+  )
 
   const [quantities, setQuantities] = useState<Record<number, number>>(() => {
     const map: Record<number, number> = {}
@@ -56,6 +47,25 @@ export function CartPage() {
   }, [event, quantities])
 
   const total = lines.reduce((sum, line) => sum + line.priceGNF * line.quantity, 0)
+
+  // Reflète le panier dans le stockage (icône de navigation + reprise après rechargement).
+  useEffect(() => {
+    if (!event) return
+    if (lines.length === 0) {
+      clearCart()
+      return
+    }
+    saveCart({
+      eventId: event.id,
+      eventTitle: event.title,
+      selection: lines.map(({ ticketTypeId, name, priceGNF, quantity }) => ({
+        ticketTypeId,
+        name,
+        priceGNF,
+        quantity,
+      })),
+    })
+  }, [event, lines])
 
   function updateQuantity(ticketTypeId: number, delta: number, max: number) {
     setQuantities((prev) => {
