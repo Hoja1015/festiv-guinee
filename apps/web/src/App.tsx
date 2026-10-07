@@ -1,27 +1,41 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { HomePage } from './pages/HomePage'
-import { EventsPage } from './pages/EventsPage'
-import { EventDetailPage } from './pages/EventDetailPage'
-import { CartPage } from './pages/CartPage'
-import { AuthPage } from './pages/AuthPage'
-import { PaymentPage } from './pages/PaymentPage'
-import { ConfirmationPage } from './pages/ConfirmationPage'
-import { TicketsPage } from './pages/TicketsPage'
-import { OrganizerDashboardPage } from './pages/organizer/DashboardPage'
-import { OrganizerEventsPage } from './pages/organizer/OrganizerEventsPage'
-import { CreateEventPage, EditEventPage } from './pages/organizer/CreateEventPage'
-import { ParticipantsPage } from './pages/organizer/ParticipantsPage'
-import { PublicationsPage } from './pages/organizer/PublicationsPage'
-import { SalesPage } from './pages/organizer/SalesPage'
-import { AttendancePage } from './pages/organizer/AttendancePage'
-import { PostPage } from './pages/PostPage'
-import { AgentHomePage } from './pages/agent/AgentHomePage'
-import { ScanPage } from './pages/agent/ScanPage'
 import { MobileNav } from './components/MobileNav'
 import { TopNav } from './components/TopNav'
 import { Footer } from './components/Footer'
 import { RequireAuth } from './components/RequireAuth'
 import { RequireRole } from './components/RequireRole'
+
+// Chaque page est chargée à la demande : le bundle initial ne contient que
+// l'accueil et la navigation (jsQR n'arrive qu'avec la page de scan).
+const EventsPage = lazy(() => import('./pages/EventsPage').then((m) => ({ default: m.EventsPage })))
+const EventDetailPage = lazy(() => import('./pages/EventDetailPage').then((m) => ({ default: m.EventDetailPage })))
+const CartPage = lazy(() => import('./pages/CartPage').then((m) => ({ default: m.CartPage })))
+const AuthPage = lazy(() => import('./pages/AuthPage').then((m) => ({ default: m.AuthPage })))
+const PaymentPage = lazy(() => import('./pages/PaymentPage').then((m) => ({ default: m.PaymentPage })))
+const ConfirmationPage = lazy(() => import('./pages/ConfirmationPage').then((m) => ({ default: m.ConfirmationPage })))
+const TicketsPage = lazy(() => import('./pages/TicketsPage').then((m) => ({ default: m.TicketsPage })))
+const PostPage = lazy(() => import('./pages/PostPage').then((m) => ({ default: m.PostPage })))
+const OrganizerDashboardPage = lazy(() => import('./pages/organizer/DashboardPage').then((m) => ({ default: m.OrganizerDashboardPage })))
+const OrganizerEventsPage = lazy(() => import('./pages/organizer/OrganizerEventsPage').then((m) => ({ default: m.OrganizerEventsPage })))
+const CreateEventPage = lazy(() => import('./pages/organizer/CreateEventPage').then((m) => ({ default: m.CreateEventPage })))
+const EditEventPage = lazy(() => import('./pages/organizer/CreateEventPage').then((m) => ({ default: m.EditEventPage })))
+const ParticipantsPage = lazy(() => import('./pages/organizer/ParticipantsPage').then((m) => ({ default: m.ParticipantsPage })))
+const PublicationsPage = lazy(() => import('./pages/organizer/PublicationsPage').then((m) => ({ default: m.PublicationsPage })))
+const SalesPage = lazy(() => import('./pages/organizer/SalesPage').then((m) => ({ default: m.SalesPage })))
+const AttendancePage = lazy(() => import('./pages/organizer/AttendancePage').then((m) => ({ default: m.AttendancePage })))
+const TeamPage = lazy(() => import('./pages/organizer/TeamPage').then((m) => ({ default: m.TeamPage })))
+const AgentHomePage = lazy(() => import('./pages/agent/AgentHomePage').then((m) => ({ default: m.AgentHomePage })))
+const ScanPage = lazy(() => import('./pages/agent/ScanPage').then((m) => ({ default: m.ScanPage })))
+
+function PageFallback() {
+  return (
+    <div className="flex min-h-[60vh] items-center justify-center" role="status" aria-label="Chargement">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-600/20 border-t-primary-600" />
+    </div>
+  )
+}
 
 function ComingSoon({ title }: { title: string }) {
   return (
@@ -43,6 +57,7 @@ function AppShell() {
       {!isBackoffice && <TopNav />}
 
       <main className={isBackoffice ? '' : 'flex-1'}>
+      <Suspense fallback={<PageFallback />}>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/evenements" element={<EventsPage />} />
@@ -125,6 +140,14 @@ function AppShell() {
           }
         />
         <Route
+          path="/organisateur/equipe"
+          element={
+            <RequireRole roles={['ORGANIZER']}>
+              <TeamPage />
+            </RequireRole>
+          }
+        />
+        <Route
           path="/organisateur/publications"
           element={
             <RequireRole roles={['ORGANIZER']}>
@@ -158,6 +181,7 @@ function AppShell() {
           }
         />
       </Routes>
+      </Suspense>
       </main>
 
       {!isBackoffice && <Footer />}

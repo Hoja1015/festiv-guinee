@@ -4,8 +4,10 @@ import { Feed } from '../components/posts/Feed'
 import { usePastHighlights } from '../hooks/useEvents'
 import type { PastHighlightEvent } from '../lib/api'
 
-const HERO_IMAGE_URL =
-  'https://images.unsplash.com/photo-1768053921689-1bc09db904c9?fm=jpg&q=70&w=1600&auto=format&fit=crop'
+const HERO_BASE = 'https://images.unsplash.com/photo-1768053921689-1bc09db904c9?fm=jpg&q=70&auto=format&fit=crop'
+const HERO_IMAGE_URL = `${HERO_BASE}&w=1200`
+// Plusieurs tailles : un téléphone ne télécharge pas l'image 1600 px.
+const HERO_SRCSET = `${HERO_BASE}&w=640 640w, ${HERO_BASE}&w=1200 1200w, ${HERO_BASE}&w=1800 1800w`
 
 const dateFormatter = new Intl.DateTimeFormat('fr-FR', {
   day: '2-digit',
@@ -21,6 +23,10 @@ export function HomePage() {
       <div className="relative">
         <img
           src={HERO_IMAGE_URL}
+          srcSet={HERO_SRCSET}
+          sizes="100vw"
+          fetchPriority="high"
+          decoding="async"
           alt="Foule lors d'un festival avec éclairage de scène"
           className="h-56 w-full object-cover sm:h-72 md:h-[420px]"
         />
@@ -109,6 +115,8 @@ function PastHighlightCard({ event, delay }: { event: PastHighlightEvent; delay:
         {event.imageUrl ? (
           <img
             src={event.imageUrl}
+            loading="lazy"
+            decoding="async"
             alt=""
             className="h-[100px] w-full object-cover transition-transform duration-300 group-hover:scale-105 md:h-[140px]"
           />

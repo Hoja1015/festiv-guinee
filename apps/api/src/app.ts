@@ -13,6 +13,7 @@ import { scansRoutes } from '../src/modules/scans/scans.routes.js'
 import { postsRoutes } from '../src/modules/posts/posts.routes.js'
 import { salesRoutes } from '../src/modules/sales/sales.routes.js'
 import { attendanceRoutes } from '../src/modules/attendance/attendance.routes.js'
+import { teamRoutes } from '../src/modules/team/team.routes.js'
 
 export function createApp() {
   const app = express()
@@ -41,6 +42,7 @@ export function createApp() {
   app.use('/posts', postsRoutes)
   app.use('/sales', salesRoutes)
   app.use('/attendance', attendanceRoutes)
+  app.use('/team', teamRoutes)
 
   app.use(errorHandler)
 

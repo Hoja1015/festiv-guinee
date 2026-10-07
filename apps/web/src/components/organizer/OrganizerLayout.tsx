@@ -8,12 +8,11 @@ interface NavItem {
   enabled: boolean
 }
 
-// Dashboard, Événements et Participants existent — le reste sera branché au
-// fur et à mesure (app évolutive, décision du 2026-10-04).
+// Les écrans listés ici existent tous ; on en ajoute au fur et à mesure
 const NAV_ITEMS: NavItem[] = [
   { label: 'Tableau de bord', to: '/organisateur', enabled: true },
   { label: 'Événements', to: '/organisateur/evenements', enabled: true },
-  { label: 'Billets', to: '#', enabled: false },
+  { label: 'Équipe', to: '/organisateur/equipe', enabled: true },
   { label: 'Ventes', to: '/organisateur/ventes', enabled: true },
   { label: 'Participants', to: '/organisateur/participants', enabled: true },
   { label: 'Publications', to: '/organisateur/publications', enabled: true },
