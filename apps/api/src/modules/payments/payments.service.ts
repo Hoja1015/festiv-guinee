@@ -2,6 +2,7 @@ import { paymentsRepository } from '../payments/payments.repository.js'
 import { ordersRepository } from '../../orders/orders.repository.js'
 import { ticketsService } from '../tickets/tickets.service.js'
 import { MockPaymentProvider } from '../payments/providers/mock-payment-provider.js'
+import { sendOrderConfirmation } from '../notifications/order-confirmation.js'
 import { NotFoundError, ForbiddenError, ValidationError } from '../../shared/errors.js'
 
 export const paymentsService = {
@@ -31,6 +32,10 @@ export const paymentsService = {
       // Génération des billets UNIQUEMENT après confirmation du paiement —
       // jamais avant, pour ne jamais émettre de billet non payé.
       const tokensByOrderItem = await ticketsService.generateForOrder(orderId)
+
+      // Email de confirmation : lancé sans attendre (le client n'a pas à
+      // patienter) et sans jamais pouvoir faire échouer le paiement.
+      void sendOrderConfirmation(orderId)
 
       // On transforme la Map en objet simple pour la réponse JSON
       // (JSON ne sait pas sérialiser une Map nativement).

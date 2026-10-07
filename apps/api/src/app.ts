@@ -2,6 +2,8 @@ import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import cookieParser from 'cookie-parser'
+import compression from 'compression'
+import { globalLimiter, loginLimiter, registerLimiter, postsWriteLimiter } from '../src/middlewares/rate-limit.js'
 import { errorHandler } from '../src/middlewares/error-handler.js'
 import { authRoutes } from '../src/modules/auth/auth.routes.js'
 import { eventsRoutes } from '../src/modules/events/events.routes.js'
@@ -18,7 +20,15 @@ import { teamRoutes } from '../src/modules/team/team.routes.js'
 export function createApp() {
   const app = express()
 
+  // Derrière un proxy (hébergeur), l'IP réelle du visiteur vient de l'en-tête
+  // X-Forwarded-For : sans ce réglage, tous les visiteurs auraient la même IP
+  // pour la limitation. TRUST_PROXY = nombre de proxys devant l'API (souvent 1).
+  if (process.env.TRUST_PROXY) {
+    app.set('trust proxy', Number(process.env.TRUST_PROXY))
+  }
+
   app.use(helmet())
+  app.use(compression())
   app.use(
     cors({
       origin: process.env.WEB_URL || 'http://localhost:5173',
@@ -31,6 +41,12 @@ export function createApp() {
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok' })
   })
+
+  app.use(globalLimiter)
+  app.use('/auth/login', loginLimiter)
+  app.use('/auth/register', registerLimiter)
+  // Lecture libre ; seules les écritures (likes, commentaires...) sont freinées.
+  app.use('/posts', (req, res, next) => (req.method === 'GET' ? next() : postsWriteLimiter(req, res, next)))
 
   app.use('/auth', authRoutes)
   app.use('/events', eventsRoutes)
