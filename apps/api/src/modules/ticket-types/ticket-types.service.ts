@@ -1,7 +1,7 @@
 import { ticketTypesRepository } from './ticket-types.repository.js'
 import { eventsService } from '../events/events.service.js'
 import { NotFoundError, ValidationError } from '../../shared/errors.js'
-import type { CreateTicketTypeInput, UpdateTicketTypeInput } from './ticket-types.schema.ts'
+import type { CreateTicketTypeInput, UpdateTicketTypeInput } from './ticket-types.schema.js'
 
 export const ticketTypesService = {
   listByEvent(eventId: number) {
@@ -12,6 +12,10 @@ export const ticketTypesService = {
     // Vérifie que l'événement existe ET appartient à cet organisateur —
     // réutilise la logique déjà écrite dans events.service.ts, pas de duplication.
     await eventsService.assertOwnership(eventId, organizerId)
+
+    if (await ticketTypesRepository.findByEventAndName(eventId, input.name)) {
+      throw new ValidationError(`Cet événement a déjà un billet ${input.name}`)
+    }
 
     return ticketTypesRepository.create(eventId, input)
   },
@@ -29,21 +33,28 @@ export const ticketTypesService = {
       throw new NotFoundError('Type de billet')
     }
 
-    // Si on modifie totalQuantity, il faut ajuster remainingQuantity en
-    // conséquence, sinon on casse la cohérence du stock si des billets ont
-    // déjà été vendus (remainingQuantity ne doit jamais dépasser totalQuantity).
+    if (input.name && input.name !== ticketType.name) {
+      if (await ticketTypesRepository.findByEventAndName(eventId, input.name)) {
+        throw new ValidationError(`Cet événement a déjà un billet ${input.name}`)
+      }
+    }
+
+    // Modifier la quantité totale déplace aussi la quantité restante du même
+    // écart, de façon atomique : jamais de stock négatif, même si des
+    // achats ont lieu pendant la modification.
     if (input.totalQuantity !== undefined) {
-      const alreadySold = ticketType.totalQuantity - ticketType.remainingQuantity
-      if (input.totalQuantity < alreadySold) {
+      const delta = input.totalQuantity - ticketType.totalQuantity
+      const updated = await ticketTypesRepository.updateWithQuantity(
+        ticketTypeId,
+        { ...input, totalQuantity: input.totalQuantity },
+        delta
+      )
+      if (updated === 0) {
         throw new ValidationError(
-          `Impossible de réduire la quantité en dessous de ${alreadySold} (déjà vendus)`
+          'Impossible de réduire la quantité en dessous du nombre de billets déjà vendus ou réservés'
         )
       }
-      const newRemaining = input.totalQuantity - alreadySold
-      return ticketTypesRepository.update(ticketTypeId, {
-        ...input,
-        remainingQuantity: newRemaining,
-      } as UpdateTicketTypeInput & { remainingQuantity: number })
+      return ticketTypesRepository.findById(ticketTypeId)
     }
 
     return ticketTypesRepository.update(ticketTypeId, input)

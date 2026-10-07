@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../lib/api'
+import type { EventSales } from './useSales'
 
 export interface OrganizerTicketType {
   id: number
@@ -42,20 +43,30 @@ export interface EventStats {
   byType: { name: OrganizerTicketType['name']; sold: number; percent: number }[]
 }
 
-// Tout est calculé à partir de totalQuantity/remainingQuantity réels —
-// aucun chiffre n'est stocké ou inventé côté frontend.
-export function computeEventStats(event: OrganizerEvent): EventStats {
-  let sold = 0
-  let totalCapacity = 0
-  let revenueGNF = 0
+// Sans `sales`, les chiffres viennent du stock (total - restant), qui compte
+// aussi les réservations non payées. Avec `sales` (données de /sales/mine,
+// commandes PAYÉES uniquement), les ventes et revenus sont ceux de la page
+// Ventes : c'est la source de vérité à privilégier. La capacité vient
+// toujours des types de billets.
+export function computeEventStats(event: OrganizerEvent, sales?: EventSales): EventStats {
+  const totalCapacity = event.ticketTypes.reduce((sum, tt) => sum + tt.totalQuantity, 0)
 
-  const raw = event.ticketTypes.map((tt) => {
-    const ttSold = tt.totalQuantity - tt.remainingQuantity
-    sold += ttSold
-    totalCapacity += tt.totalQuantity
-    revenueGNF += ttSold * tt.priceGNF
-    return { name: tt.name, sold: ttSold }
-  })
+  let sold = 0
+  let revenueGNF = 0
+  let raw: { name: OrganizerTicketType['name']; sold: number }[]
+
+  if (sales) {
+    sold = sales.ticketsSold
+    revenueGNF = sales.revenueGNF
+    raw = sales.byType.map((t) => ({ name: t.name, sold: t.sold }))
+  } else {
+    raw = event.ticketTypes.map((tt) => {
+      const ttSold = tt.totalQuantity - tt.remainingQuantity
+      sold += ttSold
+      revenueGNF += ttSold * tt.priceGNF
+      return { name: tt.name, sold: ttSold }
+    })
+  }
 
   const byType = raw.map((t) => ({
     ...t,

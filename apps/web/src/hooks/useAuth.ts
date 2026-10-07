@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { api, ApiError } from '../lib/api'
 
 export interface AuthUser {
@@ -43,11 +43,21 @@ export function useCurrentUser() {
   })
 }
 
+// Efface tout le cache sauf la session ('auth') : celle-ci est réécrite juste
+// après avec setQueryData, ce qui garde les écrans ouverts bien synchronisés.
+function clearPrivateData(queryClient: QueryClient) {
+  queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== 'auth' })
+}
+
+// Le cache de React Query est partagé par tout le navigateur : sans le vider,
+// la personne qui se connecte juste après une autre verrait un instant les
+// billets, commandes ou ventes de la précédente. On repart donc de zéro.
 export function useLogin() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (input: LoginInput) => api.post<{ user: AuthUser }>('/auth/login', input),
     onSuccess: (data) => {
+      clearPrivateData(queryClient)
       queryClient.setQueryData(AUTH_QUERY_KEY, data.user)
     },
   })
@@ -58,6 +68,7 @@ export function useRegister() {
   return useMutation({
     mutationFn: (input: RegisterInput) => api.post<{ user: AuthUser }>('/auth/register', input),
     onSuccess: (data) => {
+      clearPrivateData(queryClient)
       queryClient.setQueryData(AUTH_QUERY_KEY, data.user)
     },
   })
@@ -68,6 +79,7 @@ export function useLogout() {
   return useMutation({
     mutationFn: () => api.post('/auth/logout'),
     onSuccess: () => {
+      clearPrivateData(queryClient)
       queryClient.setQueryData(AUTH_QUERY_KEY, null)
     },
   })

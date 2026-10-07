@@ -1,10 +1,33 @@
 <!doctype html>
-<html lang="en">
+<html lang="fr">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>web</title>
+    <meta name="theme-color" content="#4F3DE8" />
+    <title>Festiv'Guinée – Billetterie des festivals de Guinée</title>
+    <meta
+      name="description"
+      content="Achetez vos billets pour les meilleurs festivals de Guinée en ligne, recevez votre QR code et entrez sans file d'attente."
+    />
+    <!-- L'image d'en-tête de l'accueil vient d'Unsplash : on ouvre la connexion tout de suite. -->
+    <link rel="preconnect" href="https://images.unsplash.com" crossorigin />
+    <script>
+      // Sur l'accueil uniquement, on précharge l'image d'en-tête (c'est le LCP) :
+      // sans ça, le navigateur ne la découvre qu'après l'exécution du JavaScript.
+      // Les URL doivent rester identiques à celles de HomePage.tsx.
+      if (location.pathname === '/') {
+        var base = 'https://images.unsplash.com/photo-1768053921689-1bc09db904c9?fm=jpg&q=70&auto=format&fit=crop'
+        var l = document.createElement('link')
+        l.rel = 'preload'
+        l.as = 'image'
+        l.href = base + '&w=1200'
+        l.setAttribute('imagesrcset', base + '&w=640 640w, ' + base + '&w=1200 1200w, ' + base + '&w=1800 1800w')
+        l.setAttribute('imagesizes', '100vw')
+        l.setAttribute('fetchpriority', 'high')
+        document.head.appendChild(l)
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

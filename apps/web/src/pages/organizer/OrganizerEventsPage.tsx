@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { OrganizerLayout } from '../../components/organizer/OrganizerLayout'
 import { useMyEvents, computeEventStats, type OrganizerEvent } from '../../hooks/useOrganizerEvents'
 import { usePublishEvent } from '../../hooks/useEventMutations'
+import { useMySales } from '../../hooks/useSales'
 
 const dateFormatter = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeStyle: 'short' })
 const numberFormatter = new Intl.NumberFormat('fr-FR')
@@ -17,6 +18,8 @@ const STATUS_STYLE: Record<OrganizerEvent['status'], { label: string; color: str
 export function OrganizerEventsPage() {
   const { data: events, isLoading, isError } = useMyEvents()
   const publish = usePublishEvent()
+  // Billets vendus = commandes payées, comme la page Ventes et le tableau de bord.
+  const { data: sales } = useMySales()
 
   return (
     <OrganizerLayout>
@@ -52,7 +55,10 @@ export function OrganizerEventsPage() {
         <ul className="mt-6 flex flex-col gap-4">
           {events.map((event) => {
             const status = STATUS_STYLE[event.status]
-            const stats = computeEventStats(event)
+            const stats = computeEventStats(
+              event,
+              sales?.events.find((e) => e.eventId === event.id),
+            )
             const isPublishing = publish.isPending && publish.variables === event.id
 
             return (

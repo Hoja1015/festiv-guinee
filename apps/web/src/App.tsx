@@ -25,6 +25,7 @@ const ParticipantsPage = lazy(() => import('./pages/organizer/ParticipantsPage')
 const PublicationsPage = lazy(() => import('./pages/organizer/PublicationsPage').then((m) => ({ default: m.PublicationsPage })))
 const SalesPage = lazy(() => import('./pages/organizer/SalesPage').then((m) => ({ default: m.SalesPage })))
 const AttendancePage = lazy(() => import('./pages/organizer/AttendancePage').then((m) => ({ default: m.AttendancePage })))
+const AccountPage = lazy(() => import('./pages/AccountPage').then((m) => ({ default: m.AccountPage })))
 const TeamPage = lazy(() => import('./pages/organizer/TeamPage').then((m) => ({ default: m.TeamPage })))
 const AgentHomePage = lazy(() => import('./pages/agent/AgentHomePage').then((m) => ({ default: m.AgentHomePage })))
 const ScanPage = lazy(() => import('./pages/agent/ScanPage').then((m) => ({ default: m.ScanPage })))
@@ -33,14 +34,6 @@ function PageFallback() {
   return (
     <div className="flex min-h-[60vh] items-center justify-center" role="status" aria-label="Chargement">
       <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-600/20 border-t-primary-600" />
-    </div>
-  )
-}
-
-function ComingSoon({ title }: { title: string }) {
-  return (
-    <div className="flex min-h-[70vh] items-center justify-center px-6 text-center">
-      <p className="text-gray-500">Écran « {title} » en construction — on y arrive bientôt.</p>
     </div>
   )
 }
@@ -89,7 +82,7 @@ function AppShell() {
           }
         />
         <Route path="/publications/:id" element={<PostPage />} />
-        <Route path="/compte" element={<ComingSoon title="Compte" />} />
+        <Route path="/compte" element={<AccountPage />} />
 
         <Route
           path="/organisateur"

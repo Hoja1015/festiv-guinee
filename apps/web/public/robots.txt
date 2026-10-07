@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+# Espaces privés : inutile de les indexer.
+Disallow: /organisateur
+Disallow: /agent
+Disallow: /paiement
+Disallow: /confirmation
+Disallow: /billets

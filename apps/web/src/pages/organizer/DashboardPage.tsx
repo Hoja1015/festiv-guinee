@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { OrganizerLayout } from '../../components/organizer/OrganizerLayout'
 import { useMyEvents, computeEventStats } from '../../hooks/useOrganizerEvents'
+import { useMySales } from '../../hooks/useSales'
 import { ticketTypeLabel } from '../../lib/ticketType'
 
 const numberFormatter = new Intl.NumberFormat('fr-FR')
@@ -13,11 +14,17 @@ const DONUT_COLOR: Record<'STANDARD' | 'VIP' | 'VVIP', string> = {
 }
 
 export function OrganizerDashboardPage() {
-  const { data: events, isLoading, isError } = useMyEvents()
+  const eventsQuery = useMyEvents()
+  const salesQuery = useMySales()
+  const events = eventsQuery.data
+  const isLoading = eventsQuery.isLoading || salesQuery.isLoading
+  const isError = eventsQuery.isError || salesQuery.isError
   const [selectedId, setSelectedId] = useState<number | null>(null)
 
   const selectedEvent = events?.find((e) => e.id === selectedId) ?? events?.[0]
-  const stats = selectedEvent ? computeEventStats(selectedEvent) : null
+  // Ventes et revenus : commandes payées uniquement, comme la page Ventes.
+  const selectedSales = salesQuery.data?.events.find((e) => e.eventId === selectedEvent?.id)
+  const stats = selectedEvent ? computeEventStats(selectedEvent, selectedSales) : null
 
   // Construit le dégradé conique du donut à partir des vraies parts par type —
   // rien n'est codé en dur, l'ordre et les pourcentages viennent de `stats`.
