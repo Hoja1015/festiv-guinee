@@ -5,6 +5,7 @@ import { useCurrentUser } from '../../hooks/useAuth'
 import { useMyEvents } from '../../hooks/useOrganizerEvents'
 import { useCreatePost, useInfinitePosts, type CreatePostPayload } from '../../hooks/usePosts'
 import { ApiError } from '../../lib/api'
+import { ImageUploadField } from '../../components/ImageUploadField'
 
 const inputClass =
   'w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-ink-950 placeholder:text-gray-400 focus:border-primary-600 focus:outline-none'
@@ -28,6 +29,7 @@ export function PublicationsPage() {
   const [imageUrl, setImageUrl] = useState('')
   const [eventId, setEventId] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [imageUploading, setImageUploading] = useState(false)
 
   // Seuls les événements publiés peuvent être liés (règle appliquée aussi côté serveur).
   const publishedEvents = events?.filter((e) => e.status === 'PUBLISHED') ?? []
@@ -84,15 +86,13 @@ export function PublicationsPage() {
             />
           </label>
 
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-bold text-ink-950">URL de l'image (optionnel)</span>
-            <input
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              placeholder="https://..."
-              className={inputClass}
-            />
-          </label>
+          <ImageUploadField
+            label="Image (optionnel)"
+            folder="posts"
+            value={imageUrl}
+            onChange={setImageUrl}
+            onUploadingChange={setImageUploading}
+          />
 
           <label className="block">
             <span className="mb-1.5 block text-xs font-bold text-ink-950">Événement lié (optionnel)</span>
@@ -110,10 +110,10 @@ export function PublicationsPage() {
 
           <button
             type="submit"
-            disabled={createPost.isPending}
+            disabled={createPost.isPending || imageUploading}
             className="self-start rounded-xl bg-primary-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-primary-700 disabled:opacity-50"
           >
-            {createPost.isPending ? 'Publication...' : 'Publier'}
+            {createPost.isPending ? 'Publication...' : imageUploading ? "Envoi de l'image..." : 'Publier'}
           </button>
         </form>
 

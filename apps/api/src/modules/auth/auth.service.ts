@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt'
 import { authRepository } from './auth.repository.js'
 import { signToken } from '../../lib/jwt.js'
 import { ConflictError, UnauthorizedError } from '../../shared/errors.js'
+import { sendWelcomeEmail } from '../notifications/welcome.js'
 import type { RegisterInput, LoginInput } from './auth.schema.js'
 
 // Facteur de coût du hash bcrypt : plus il est élevé, plus le hash est lent
@@ -27,6 +28,9 @@ export const authService = {
     })
 
     const token = signToken({ userId: user.id, role: user.role })
+
+    // Envoi en arrière-plan : l'inscription ne dépend jamais de l'email.
+    void sendWelcomeEmail({ fullName: user.fullName, email: user.email })
 
     return { user, token }
   },

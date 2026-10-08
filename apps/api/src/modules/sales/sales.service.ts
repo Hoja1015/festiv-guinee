@@ -1,4 +1,5 @@
 import { salesRepository } from './sales.repository.js'
+import { buildPageMeta, type PageParams } from '../../shared/pagination.js'
 
 const RECENT_ORDERS_LIMIT = 20
 const TYPES = ['STANDARD', 'VIP', 'VVIP'] as const
@@ -98,5 +99,26 @@ export const salesService = {
       events: eventsDto,
       recentOrders,
     }
+  },
+
+  // Historique complet des commandes payées, une page à la fois. Même forme
+  // de ligne que `recentOrders`, mais découpée directement en base.
+  async listOrders(organizerId: number, page: PageParams) {
+    const { orders, total } = await salesRepository.findPaidOrdersPage(
+      organizerId,
+      page.skip,
+      page.take,
+    )
+
+    const rows = orders.map((order) => ({
+      orderId: order.id,
+      createdAt: order.createdAt,
+      customerName: order.customer.fullName,
+      eventTitle: order.orderItems[0]?.ticketType.event.title ?? '',
+      totalGNF: order.orderItems.reduce((sum, item) => sum + item.quantity * item.unitPriceGNF, 0),
+      tickets: order.orderItems.reduce((sum, item) => sum + item.quantity, 0),
+    }))
+
+    return { orders: rows, pagination: buildPageMeta(total, page) }
   },
 }

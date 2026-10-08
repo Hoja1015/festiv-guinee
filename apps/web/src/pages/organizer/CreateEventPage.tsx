@@ -9,6 +9,7 @@ import {
 } from '../../hooks/useEventMutations'
 import { useMyEvents, type OrganizerEvent } from '../../hooks/useOrganizerEvents'
 import { ApiError } from '../../lib/api'
+import { ImageUploadField } from '../../components/ImageUploadField'
 import { ticketTypeLabel } from '../../lib/ticketType'
 
 const TYPE_NAMES = ['STANDARD', 'VIP', 'VVIP'] as const
@@ -134,6 +135,8 @@ function EventWizard({ initial }: { initial?: OrganizerEvent }) {
   // Si la création réussit mais que la publication échoue, on garde l'id pour
   // ne réessayer que la publication (sinon on créerait un doublon).
   const [createdId, setCreatedId] = useState<number | null>(null)
+  // Bloque la navigation pendant l'envoi d'une image, pour ne pas la perdre.
+  const [imageUploading, setImageUploading] = useState(false)
 
   const [info, setInfo] = useState<InfoForm>(
     initial
@@ -323,14 +326,14 @@ function EventWizard({ initial }: { initial?: OrganizerEvent }) {
                 />
               </Field>
 
-              <Field label="URL de l'image (optionnel)" error={infoErrors.imageUrl}>
-                <input
-                  className={inputClass}
-                  value={info.imageUrl}
-                  onChange={(e) => updateInfo('imageUrl', e.target.value)}
-                  placeholder="https://..."
-                />
-              </Field>
+              <ImageUploadField
+                label="Image de l'événement (optionnel)"
+                folder="events"
+                value={info.imageUrl}
+                onChange={(url) => updateInfo('imageUrl', url)}
+                onUploadingChange={setImageUploading}
+                error={infoErrors.imageUrl}
+              />
             </div>
           )}
 
@@ -499,9 +502,10 @@ function EventWizard({ initial }: { initial?: OrganizerEvent }) {
             {step < 2 ? (
               <button
                 onClick={goNext}
-                className="rounded-xl bg-primary-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-primary-700"
+                disabled={imageUploading}
+                className="rounded-xl bg-primary-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-primary-700 disabled:opacity-50"
               >
-                Suivant
+                {imageUploading ? "Envoi de l'image..." : 'Suivant'}
               </button>
             ) : (
               <div className="flex flex-col gap-3 sm:flex-row">

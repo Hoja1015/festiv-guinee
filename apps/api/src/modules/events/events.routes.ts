@@ -20,5 +20,11 @@ eventsRoutes.get(
   requireRole('ORGANIZER'),
   eventsController.listParticipants
 )
+eventsRoutes.get(
+  '/:id/participants/export',
+  requireAuth,
+  requireRole('ORGANIZER'),
+  eventsController.exportParticipants
+)
 
 eventsRoutes.get('/:id', eventsController.getById)

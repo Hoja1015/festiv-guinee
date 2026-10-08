@@ -1,5 +1,6 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { api } from '../lib/api'
+import type { PageMeta } from './useEvents'
 
 export type TicketTypeName = 'STANDARD' | 'VIP' | 'VVIP'
 
@@ -33,5 +34,20 @@ export function useMySales() {
   return useQuery({
     queryKey: ['sales', 'mine'],
     queryFn: () => api.get<SalesData>('/sales/mine'),
+  })
+}
+
+interface PaidOrdersResponse {
+  orders: RecentOrder[]
+  pagination: PageMeta
+}
+
+// Historique complet des commandes payées, une page à la fois.
+export function useMyPaidOrders(page: number, pageSize = 20) {
+  return useQuery({
+    queryKey: ['sales', 'orders', { page, pageSize }],
+    queryFn: () => api.get<PaidOrdersResponse>(`/sales/orders?page=${page}&pageSize=${pageSize}`),
+    // Garde la page précédente affichée pendant le chargement de la suivante.
+    placeholderData: keepPreviousData,
   })
 }

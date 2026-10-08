@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import type { PastHighlightEvent } from '../lib/api'
 
@@ -24,11 +24,42 @@ export interface PublishedEvent {
   ticketTypes: TicketType[]
 }
 
-export function usePublishedEvents() {
+export interface PageMeta {
+  page: number
+  pageSize: number
+  total: number
+  totalPages: number
+}
+
+export interface PublishedEventsFilters {
+  page?: number
+  pageSize?: number
+  q?: string
+  category?: string
+  city?: string
+}
+
+interface PublishedEventsResponse {
+  events: PublishedEvent[]
+  categories: string[]
+  pagination: PageMeta
+}
+
+// Liste publique paginée : le filtrage et le découpage en pages se font côté API.
+export function usePublishedEvents(filters: PublishedEventsFilters = {}) {
+  const params = new URLSearchParams()
+  if (filters.page) params.set('page', String(filters.page))
+  if (filters.pageSize) params.set('pageSize', String(filters.pageSize))
+  if (filters.q) params.set('q', filters.q)
+  if (filters.category) params.set('category', filters.category)
+  if (filters.city) params.set('city', filters.city)
+  const query = params.toString()
+
   return useQuery({
-    queryKey: ['events', 'published'],
-    queryFn: () => api.get<{ events: PublishedEvent[] }>('/events'),
-    select: (data) => data.events,
+    queryKey: ['events', 'published', filters],
+    queryFn: () => api.get<PublishedEventsResponse>(`/events${query ? `?${query}` : ''}`),
+    // Garde la page précédente affichée pendant le chargement de la suivante.
+    placeholderData: keepPreviousData,
   })
 }
 

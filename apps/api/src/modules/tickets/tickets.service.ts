@@ -2,6 +2,25 @@ import { prisma } from '../../lib/prisma.js'
 import { ticketsRepository } from '../tickets/tickets.repository.js'
 import { generateTicketToken, hashToken, encryptToken, decryptToken } from '../../lib/tokens.js'
 import { NotFoundError, ForbiddenError } from '../../shared/errors.js'
+import { buildPageMeta, type PageParams } from '../../shared/pagination.js'
+
+// Format d'une ligne de la liste des participants (page et export CSV).
+function toParticipant(t: {
+  id: number
+  status: 'VALID' | 'USED' | 'CANCELLED'
+  orderItem: {
+    ticketType: { name: 'STANDARD' | 'VIP' | 'VVIP' }
+    order: { customer: { fullName: string; email: string } }
+  }
+}) {
+  return {
+    ticketId: t.id,
+    status: t.status,
+    customerName: t.orderItem.order.customer.fullName,
+    customerEmail: t.orderItem.order.customer.email,
+    ticketType: t.orderItem.ticketType.name,
+  }
+}
 
 export const ticketsService = {
   // Appelée uniquement depuis payments.service.ts, juste après qu'une
@@ -68,18 +87,24 @@ export const ticketsService = {
     return decryptToken(ticket.tokenEncrypted)
   },
 
-  // Liste des acheteurs d'un événement, triée par nom — filet de sécurité
-  // papier/CSV si le scan QR est indisponible. L'appelant (events.service)
-  // est responsable de vérifier que l'organisateur possède bien l'événement.
-  async listForEvent(eventId: number) {
-    const tickets = await ticketsRepository.findByEvent(eventId)
+  // Une page de la liste des acheteurs d'un événement, triée par nom, avec
+  // recherche optionnelle. L'appelant (events.service) est responsable de
+  // vérifier que l'organisateur possède bien l'événement.
+  async listForEvent(eventId: number, q: string | undefined, page: PageParams) {
+    const { tickets, total } = await ticketsRepository.findParticipantsPage(
+      eventId,
+      q,
+      page.skip,
+      page.take,
+    )
 
-    return tickets.map((t) => ({
-      ticketId: t.id,
-      status: t.status,
-      customerName: t.orderItem.order.customer.fullName,
-      customerEmail: t.orderItem.order.customer.email,
-      ticketType: t.orderItem.ticketType.name,
-    }))
+    return { participants: tickets.map(toParticipant), pagination: buildPageMeta(total, page) }
+  },
+
+  // Liste complète, sans pagination : filet de sécurité (export CSV) si le
+  // scan QR est indisponible. Même règle de propriété pour l'appelant.
+  async listAllForEvent(eventId: number) {
+    const tickets = await ticketsRepository.findAllParticipants(eventId)
+    return tickets.map(toParticipant)
   },
 }

@@ -1,15 +1,50 @@
 import { prisma } from '../../lib/prisma.js'
-import type { EventStatus } from '@prisma/client'
+import type { EventStatus, Prisma } from '@prisma/client'
 import { ValidationError } from '../../shared/errors.js'
 import type { CreateEventInput, UpdateEventInput } from './events.schema.js'
 
+export interface PublishedFilters {
+  q?: string
+  category?: string
+  city?: string
+}
+
 export const eventsRepository = {
-  findPublished() {
-    return prisma.event.findMany({
-      where: { status: 'PUBLISHED' },
-      orderBy: { date: 'asc' },
-      include: { ticketTypes: true },
-    })
+  // Liste publique paginée. Les filtres sont appliqués en base : filtrer côté
+  // navigateur ne verrait que la page affichée. `contains` est insensible à
+  // la casse avec la collation par défaut de MySQL.
+  async findPublishedPage(filters: PublishedFilters, skip: number, take: number) {
+    const where: Prisma.EventWhereInput = { status: 'PUBLISHED' }
+
+    if (filters.category) where.category = filters.category
+    if (filters.city) where.city = filters.city
+    if (filters.q) {
+      where.OR = [
+        { title: { contains: filters.q } },
+        { venue: { contains: filters.q } },
+        { city: { contains: filters.q } },
+      ]
+    }
+
+    const [events, total, categoryRows] = await prisma.$transaction([
+      prisma.event.findMany({
+        where,
+        orderBy: { date: 'asc' },
+        skip,
+        take,
+        include: { ticketTypes: true },
+      }),
+      prisma.event.count({ where }),
+      // Toutes les catégories publiées (hors filtres), pour la barre de filtres.
+      prisma.event.findMany({
+        where: { status: 'PUBLISHED' },
+        distinct: ['category'],
+        select: { category: true },
+        orderBy: { category: 'asc' },
+      }),
+    ])
+
+    return { events, total, categories: categoryRows.map((row) => row.category) }
   },
 
   // Événements passés ayant réellement vendu des billets, du plus vendu

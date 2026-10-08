@@ -3,6 +3,7 @@ import { eventsService } from './events.service.js'
 import { createEventSchema, updateEventSchema } from './events.schema.js'
 import { assignStaffSchema } from './event-staff.schema.js'
 import { ValidationError } from '../../shared/errors.js'
+import { parsePagination, readTextFilter } from '../../shared/pagination.js'
 
 // Un identifiant d'URL doit être un entier strictement positif : sinon
 // `Number('abc')` donnerait NaN et la requête partirait en base.
@@ -18,9 +19,17 @@ function parseId(value: string | string[] | undefined): number {
 const MAX_HIGHLIGHTS = 20
 
 export const eventsController = {
-  async listPublished(_req: Request, res: Response) {
-    const events = await eventsService.listPublished()
-    res.json({ events })
+  // Liste publique paginée : ?page=, ?pageSize=, et filtres ?q=, ?category=, ?city=
+  async listPublished(req: Request, res: Response) {
+    const query = req.query as Record<string, unknown>
+    const filters = {
+      q: readTextFilter(query.q),
+      category: readTextFilter(query.category),
+      city: readTextFilter(query.city),
+    }
+    const page = parsePagination(query, { defaultPageSize: 12, maxPageSize: 50 })
+    const { events, categories, pagination } = await eventsService.listPublished(filters, page)
+    res.json({ events, categories, pagination })
   },
 
   async listPastHighlights(req: Request, res: Response) {
@@ -82,8 +91,22 @@ export const eventsController = {
     res.json({ staff })
   },
 
+  // Participants paginés : ?page=, ?pageSize= (25 par défaut, 100 max), ?q= (nom ou email)
   async listParticipants(req: Request, res: Response) {
-    const participants = await eventsService.listParticipants(
+    const query = req.query as Record<string, unknown>
+    const page = parsePagination(query, { defaultPageSize: 25, maxPageSize: 100 })
+    const { participants, pagination } = await eventsService.listParticipants(
+      parseId(req.params.id),
+      req.user!.userId,
+      readTextFilter(query.q),
+      page
+    )
+    res.json({ participants, pagination })
+  },
+
+  // Liste complète, utilisée uniquement par le bouton de téléchargement CSV.
+  async exportParticipants(req: Request, res: Response) {
+    const participants = await eventsService.exportParticipants(
       parseId(req.params.id),
       req.user!.userId
     )

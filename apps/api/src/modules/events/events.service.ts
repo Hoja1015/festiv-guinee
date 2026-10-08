@@ -1,12 +1,18 @@
-import { eventsRepository } from './events.repository.js'
+import { eventsRepository, type PublishedFilters } from './events.repository.js'
 import { ticketsService } from '../tickets/tickets.service.js'
 import { NotFoundError, ForbiddenError, ValidationError } from '../../shared/errors.js'
+import { buildPageMeta, type PageParams } from '../../shared/pagination.js'
 import { prisma } from '../../lib/prisma.js'
 import type { CreateEventInput, UpdateEventInput } from './events.schema.js'
 
 export const eventsService = {
-  listPublished() {
-    return eventsRepository.findPublished()
+  async listPublished(filters: PublishedFilters, page: PageParams) {
+    const { events, total, categories } = await eventsRepository.findPublishedPage(
+      filters,
+      page.skip,
+      page.take,
+    )
+    return { events, categories, pagination: buildPageMeta(total, page) }
   },
 
   async listPastHighlights(limit: number) {
@@ -98,10 +104,15 @@ export const eventsService = {
     return eventsRepository.listStaff(eventId)
   },
 
-  // Liste des acheteurs d'un événement — réservé à son organisateur, qui
-  // peut la télécharger comme filet de sécurité si le scan QR ne marche pas.
-  async listParticipants(eventId: number, organizerId: number) {
+  // Acheteurs d'un événement, paginés — réservé à son organisateur.
+  async listParticipants(eventId: number, organizerId: number, q: string | undefined, page: PageParams) {
     await this.assertOwnership(eventId, organizerId)
-    return ticketsService.listForEvent(eventId)
+    return ticketsService.listForEvent(eventId, q, page)
+  },
+
+  // Liste complète pour l'export CSV de secours (si le scan QR ne marche pas).
+  async exportParticipants(eventId: number, organizerId: number) {
+    await this.assertOwnership(eventId, organizerId)
+    return ticketsService.listAllForEvent(eventId)
   },
 }
