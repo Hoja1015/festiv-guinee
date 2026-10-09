@@ -18,7 +18,7 @@ const PRO_LINKS = [
 const SOCIALS = [
   { label: 'Facebook', href: '#' },
   { label: 'Instagram', href: '#' },
-  { label: 'TikTok', href: '#' },
+  { label: 'TikTok', href: 'https://www.tiktok.com/@mgsevents?_r=1&_t=ZG-9APK2sCLqEL' },
   { label: 'WhatsApp', href: '#' },
 ]
 

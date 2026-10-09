@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useCurrentUser, useLogout } from '../../hooks/useAuth'
+import { ConfirmDialog } from '../../components/ConfirmDialog'
 
 interface NavItem {
   label: string
@@ -63,11 +64,15 @@ export function OrganizerLayout({ children }: { children: ReactNode }) {
   const { data: user } = useCurrentUser()
   const logout = useLogout()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [confirmLogout, setConfirmLogout] = useState(false)
   const burgerRef = useRef<HTMLButtonElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
 
   function handleLogout() {
-    logout.mutate(undefined, { onSuccess: () => navigate('/login', { replace: true }) })
+    logout.mutate(undefined, {
+      onSuccess: () => navigate('/login', { replace: true }),
+      onSettled: () => setConfirmLogout(false),
+    })
   }
 
   // Le menu se ferme dès qu'on change de page.
@@ -180,7 +185,7 @@ export function OrganizerLayout({ children }: { children: ReactNode }) {
             </div>
             <button
               type="button"
-              onClick={handleLogout}
+              onClick={() => setConfirmLogout(true)}
               disabled={logout.isPending}
               className="mt-3 w-full rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-ink-300 transition hover:text-white disabled:opacity-50"
             >
@@ -211,7 +216,7 @@ export function OrganizerLayout({ children }: { children: ReactNode }) {
 
           <button
             type="button"
-            onClick={handleLogout}
+            onClick={() => setConfirmLogout(true)}
             disabled={logout.isPending}
             className="mt-3 w-full rounded-xl border border-white/15 px-4 py-2 text-sm font-semibold text-ink-300 transition hover:text-white disabled:opacity-50"
           >
@@ -221,6 +226,16 @@ export function OrganizerLayout({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="min-w-0 flex-1 bg-[#F6F7FB] px-5 py-6 md:px-10 md:py-8">{children}</div>
+
+      <ConfirmDialog
+        open={confirmLogout}
+        title="Se déconnecter ?"
+        message="Vous devrez vous reconnecter pour accéder de nouveau à votre espace organisateur."
+        confirmLabel="Se déconnecter"
+        loading={logout.isPending}
+        onConfirm={handleLogout}
+        onCancel={() => setConfirmLogout(false)}
+      />
     </div>
   )
 }

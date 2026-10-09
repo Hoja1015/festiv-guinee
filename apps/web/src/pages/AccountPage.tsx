@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useCurrentUser, useLogout, type AuthUser } from '../hooks/useAuth'
 import { useCartCount } from '../hooks/useCart'
+import { ConfirmDialog } from '../components/ConfirmDialog'
 
 const ROLE_LABEL: Record<AuthUser['role'], string> = {
   CUSTOMER: 'Client',
@@ -16,9 +18,13 @@ export function AccountPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const cartCount = useCartCount()
+  const [confirmLogout, setConfirmLogout] = useState(false)
 
   function handleLogout() {
-    logout.mutate(undefined, { onSuccess: () => navigate('/', { replace: true }) })
+    logout.mutate(undefined, {
+      onSuccess: () => navigate('/', { replace: true }),
+      onSettled: () => setConfirmLogout(false),
+    })
   }
 
   if (isLoading) {
@@ -96,12 +102,22 @@ export function AccountPage() {
 
       <button
         type="button"
-        onClick={handleLogout}
+        onClick={() => setConfirmLogout(true)}
         disabled={logout.isPending}
         className="mt-6 w-full rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
       >
         {logout.isPending ? 'Déconnexion...' : 'Se déconnecter'}
       </button>
+
+      <ConfirmDialog
+        open={confirmLogout}
+        title="Se déconnecter ?"
+        message="Vous devrez vous reconnecter pour retrouver vos billets et votre panier."
+        confirmLabel="Se déconnecter"
+        loading={logout.isPending}
+        onConfirm={handleLogout}
+        onCancel={() => setConfirmLogout(false)}
+      />
     </div>
   )
 }
