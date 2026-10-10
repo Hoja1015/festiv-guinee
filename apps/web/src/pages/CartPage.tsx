@@ -124,8 +124,8 @@ export function CartPage() {
         ) : (
           <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary-600 to-accent-400" />
         )}
-        <div>
-          <div className="text-sm font-bold text-ink-950">{event.title}</div>
+        <div className="min-w-0">
+          <div className="break-words text-sm font-bold text-ink-950">{event.title}</div>
           <div className="text-xs text-gray-400">
             {dateFormatter.format(new Date(event.date))} · {event.city}
           </div>
@@ -146,8 +146,8 @@ export function CartPage() {
         <>
           <div className="divide-y divide-gray-100">
             {lines.map((line) => (
-              <div key={line.ticketTypeId} className="flex items-center justify-between py-4">
-                <div className="flex items-center gap-3">
+              <div key={line.ticketTypeId} className="flex items-center justify-between gap-3 py-4">
+                <div className="flex min-w-0 items-center gap-3">
                   <div
                     className={`flex h-8 w-8 items-center justify-center rounded-lg text-white ${ticketTypeBadgeColor(line.name)}`}
                   >
@@ -164,7 +164,8 @@ export function CartPage() {
                 <div className="flex items-center gap-2.5">
                   <button
                     onClick={() => updateQuantity(line.ticketTypeId, -1, line.remainingQuantity)}
-                    className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition hover:bg-gray-200"
+                    aria-label={`Retirer un billet ${ticketTypeLabel(line.name)}`}
+                    className="flex h-9 w-9 items-center justify-center rounded-full md:h-7 md:w-7 bg-gray-100 text-gray-500 transition hover:bg-gray-200"
                   >
                     <MinusIcon />
                   </button>
@@ -172,14 +173,15 @@ export function CartPage() {
                   <button
                     onClick={() => updateQuantity(line.ticketTypeId, 1, line.remainingQuantity)}
                     disabled={line.quantity >= line.remainingQuantity}
-                    className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition hover:bg-gray-200 disabled:opacity-40"
+                    aria-label={`Ajouter un billet ${ticketTypeLabel(line.name)}`}
+                    className="flex h-9 w-9 items-center justify-center rounded-full md:h-7 md:w-7 bg-gray-100 text-gray-500 transition hover:bg-gray-200 disabled:opacity-40"
                   >
                     <PlusIcon />
                   </button>
                   <button
                     onClick={() => removeLine(line.ticketTypeId)}
-                    aria-label="Retirer"
-                    className="ml-1 flex h-7 w-7 items-center justify-center rounded-full text-gray-300 transition hover:bg-red-50 hover:text-red-500"
+                    aria-label="Supprimer la ligne"
+                    className="ml-1 flex h-9 w-9 items-center justify-center rounded-full md:h-7 md:w-7 text-gray-300 transition hover:bg-red-50 hover:text-red-500"
                   >
                     <TrashIcon className="h-4 w-4" />
                   </button>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { OrganizerLayout } from '../../components/organizer/OrganizerLayout'
 import { useMyEvents, computeEventStats } from '../../hooks/useOrganizerEvents'
@@ -11,6 +11,22 @@ const DONUT_COLOR: Record<'STANDARD' | 'VIP' | 'VVIP', string> = {
   STANDARD: '#94A3C4',
   VIP: '#FBBF24',
   VVIP: '#4F3DE8',
+}
+
+// Carte de chiffre : en ligne (icône à gauche) sur mobile pour gagner de la place,
+// empilée à partir de md.
+function StatCard({ iconBg, icon, label, value }: { iconBg: string; icon: ReactNode; label: string; value: string }) {
+  return (
+    <div className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-4 md:block md:p-5">
+      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[10px]" style={{ background: iconBg }}>
+        {icon}
+      </div>
+      <div className="min-w-0 md:mt-3.5">
+        <div className="text-[13px] font-semibold text-gray-500">{label}</div>
+        <div className="mt-0.5 break-words text-xl font-extrabold text-ink-950 md:mt-1 md:text-2xl">{value}</div>
+      </div>
+    </div>
+  )
 }
 
 export function OrganizerDashboardPage() {
@@ -70,7 +86,8 @@ export function OrganizerDashboardPage() {
             <select
               value={selectedEvent.id}
               onChange={(e) => setSelectedId(Number(e.target.value))}
-              className="rounded-xl border border-gray-200 bg-white py-2.5 px-4 text-sm font-bold text-ink-950 focus:border-primary-600 focus:outline-none"
+              aria-label="Choisir un événement"
+              className="w-full truncate rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-bold text-ink-950 focus:border-primary-600 focus:outline-none md:w-auto md:max-w-sm md:py-2.5"
             >
               {events.map((e) => (
                 <option key={e.id} value={e.id}>
@@ -80,45 +97,44 @@ export function OrganizerDashboardPage() {
             </select>
           </div>
 
-          <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-3">
-            <div className="rounded-2xl border border-gray-100 bg-white p-5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-[#EDE9FE]">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4F3DE8" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+          <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-5">
+            <StatCard
+              iconBg="#EDE9FE"
+              label="Billets vendus"
+              value={numberFormatter.format(stats.sold)}
+              icon={
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4F3DE8" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1.5a1.5 1.5 0 0 0 0 3V15a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1.5a1.5 1.5 0 0 0 0-3V9Z" />
                 </svg>
-              </div>
-              <div className="mt-3.5 text-[13px] font-semibold text-gray-500">Billets vendus</div>
-              <div className="mt-1 text-2xl font-extrabold text-ink-950">{numberFormatter.format(stats.sold)}</div>
-            </div>
-
-            <div className="rounded-2xl border border-gray-100 bg-white p-5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-[#FEF3C7]">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+              }
+            />
+            <StatCard
+              iconBg="#FEF3C7"
+              label="Revenus"
+              value={`${numberFormatter.format(stats.revenueGNF)} GNF`}
+              icon={
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <circle cx="12" cy="12" r="9" />
                   <path d="M12 7v10M9 9.5a2.5 2.5 0 0 1 2.5-1.5h1a2 2 0 1 1 0 4h-1a2 2 0 1 0 0 4h1a2.5 2.5 0 0 0 2.5-1.5" />
                 </svg>
-              </div>
-              <div className="mt-3.5 text-[13px] font-semibold text-gray-500">Revenus</div>
-              <div className="mt-1 text-2xl font-extrabold text-ink-950">
-                {numberFormatter.format(stats.revenueGNF)} GNF
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-gray-100 bg-white p-5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-[#DCFCE7]">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#139B60" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+              }
+            />
+            <StatCard
+              iconBg="#DCFCE7"
+              label="Taux de remplissage"
+              value={`${stats.fillRate} %`}
+              icon={
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#139B60" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M3 3v18h18" />
                   <rect x="7" y="12" width="3" height="6" />
                   <rect x="12" y="8" width="3" height="10" />
                   <rect x="17" y="5" width="3" height="13" />
                 </svg>
-              </div>
-              <div className="mt-3.5 text-[13px] font-semibold text-gray-500">Taux de remplissage</div>
-              <div className="mt-1 text-2xl font-extrabold text-ink-950">{stats.fillRate} %</div>
-            </div>
+              }
+            />
           </div>
 
-          <div className="mt-6 max-w-md rounded-2xl border border-gray-100 bg-white p-5">
+          <div className="mt-6 rounded-2xl border border-gray-100 bg-white p-5 md:max-w-md">
             <h2 className="text-[15px] font-extrabold text-ink-950">Répartition des billets</h2>
             {stats.sold === 0 ? (
               <p className="mt-3 text-sm text-gray-500">Aucun billet vendu pour le moment.</p>
@@ -130,12 +146,12 @@ export function OrganizerDashboardPage() {
                     <div className="text-[10px] text-gray-400">vendus</div>
                   </div>
                 </div>
-                <div className="flex flex-col gap-2.5 text-[13px]">
+                <div className="flex min-w-0 flex-1 flex-col gap-2.5 text-[13px]">
                   {stats.byType
                     .filter((t) => t.sold > 0)
                     .map((t) => (
                       <div key={t.name} className="flex items-center gap-2">
-                        <span className="h-2.5 w-2.5 rounded-full" style={{ background: DONUT_COLOR[t.name] }} />
+                        <span className="h-2.5 w-2.5 flex-shrink-0 rounded-full" style={{ background: DONUT_COLOR[t.name] }} />
                         {ticketTypeLabel(t.name)}
                         <span className="ml-auto text-gray-400">{t.percent} %</span>
                       </div>

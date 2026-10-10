@@ -26,11 +26,35 @@ export function EventDetailPage() {
   const navigate = useNavigate()
   const { data: event, isLoading, isError } = useEvent(id)
   const [quantities, setQuantities] = useState<Record<number, number>>({})
+  const [shareNotice, setShareNotice] = useState<string | null>(null)
 
   const totalSelected = useMemo(
     () => Object.values(quantities).reduce((sum, qty) => sum + qty, 0),
     [quantities]
   )
+
+  // Total réel du panier en cours, calculé à partir des prix de l'API.
+  const totalPrice = useMemo(
+    () =>
+      (event?.ticketTypes ?? []).reduce((sum, tt) => sum + tt.priceGNF * (quantities[tt.id] ?? 0), 0),
+    [event, quantities]
+  )
+
+  async function handleShare() {
+    if (!event) return
+    const url = window.location.href
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: event.title, url })
+        return
+      }
+      await navigator.clipboard.writeText(url)
+      setShareNotice('Lien copié')
+      window.setTimeout(() => setShareNotice(null), 2000)
+    } catch {
+      // Partage annulé par l'utilisateur ou copie refusée : rien à faire.
+    }
+  }
 
   function setQuantity(ticketTypeId: number, delta: number, max: number) {
     setQuantities((prev) => {
@@ -82,12 +106,14 @@ export function EventDetailPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl animate-fade-in-up pb-36 md:pb-16">
+    <div className="mx-auto max-w-3xl animate-fade-in-up pb-44 md:pb-16">
       <div className="relative">
         {event.imageUrl ? (
           <img
             src={event.imageUrl}
             alt={event.title}
+            fetchPriority="high"
+            decoding="async"
             className="h-72 w-full object-cover md:h-96 md:rounded-2xl"
           />
         ) : (
@@ -103,11 +129,21 @@ export function EventDetailPage() {
           <ChevronLeftIcon className="h-5 w-5" />
         </button>
         <button
+          onClick={handleShare}
           aria-label="Partager"
           className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/25 text-white backdrop-blur md:right-6 md:top-6"
         >
           <ShareIcon className="h-4.5 w-4.5" />
         </button>
+
+        {shareNotice && (
+          <div
+            role="status"
+            className="absolute right-4 top-16 rounded-full bg-ink-950/85 px-3 py-1.5 text-xs font-bold text-white md:right-6 md:top-20"
+          >
+            {shareNotice}
+          </div>
+        )}
 
         <h1 className="absolute inset-x-5 bottom-4 text-2xl font-extrabold leading-tight text-white md:inset-x-8 md:bottom-6 md:text-4xl">
           {event.title}
@@ -148,11 +184,11 @@ export function EventDetailPage() {
               return (
                 <div
                   key={ticketType.id}
-                  className="flex items-center justify-between rounded-2xl border border-gray-100 px-4 py-3.5"
+                  className="flex items-center justify-between gap-3 rounded-2xl border border-gray-100 px-4 py-3.5"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
                     <div
-                      className={`flex h-10 w-10 items-center justify-center rounded-xl text-white ${ticketTypeBadgeColor(ticketType.name)}`}
+                      className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-white ${ticketTypeBadgeColor(ticketType.name)}`}
                     >
                       <StarIcon className="h-4.5 w-4.5" />
                     </div>
@@ -173,7 +209,8 @@ export function EventDetailPage() {
                       <button
                         onClick={() => setQuantity(ticketType.id, -1, ticketType.remainingQuantity)}
                         disabled={qty === 0}
-                        className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition disabled:opacity-40"
+                        aria-label={`Retirer un billet ${ticketTypeLabel(ticketType.name)}`}
+                        className="flex h-9 w-9 items-center justify-center rounded-full md:h-7 md:w-7 bg-gray-100 text-gray-500 transition disabled:opacity-40"
                       >
                         <MinusIcon />
                       </button>
@@ -181,7 +218,8 @@ export function EventDetailPage() {
                       <button
                         onClick={() => setQuantity(ticketType.id, 1, ticketType.remainingQuantity)}
                         disabled={qty >= ticketType.remainingQuantity}
-                        className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition disabled:opacity-40"
+                        aria-label={`Ajouter un billet ${ticketTypeLabel(ticketType.name)}`}
+                        className="flex h-9 w-9 items-center justify-center rounded-full md:h-7 md:w-7 bg-gray-100 text-gray-500 transition disabled:opacity-40"
                       >
                         <PlusIcon />
                       </button>
@@ -202,7 +240,15 @@ export function EventDetailPage() {
         </button>
       </div>
 
-      <div className="fixed inset-x-0 bottom-[70px] z-20 border-t border-gray-100 bg-white px-5 py-4 md:hidden">
+      <div className="fixed inset-x-0 bottom-[70px] z-20 border-t border-gray-100 bg-white px-5 py-3 md:hidden">
+        {totalSelected > 0 && (
+          <div className="mb-2 flex items-center justify-between text-sm">
+            <span className="text-gray-500">
+              {totalSelected} billet{totalSelected > 1 ? 's' : ''}
+            </span>
+            <span className="font-extrabold text-ink-950">{priceFormatter.format(totalPrice)} GNF</span>
+          </div>
+        )}
         <button
           onClick={handleChooseTicket}
           disabled={totalSelected === 0}

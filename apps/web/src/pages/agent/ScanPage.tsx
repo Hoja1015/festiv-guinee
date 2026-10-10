@@ -47,7 +47,8 @@ function ResultOverlay({ outcome, onNext }: { outcome: ScanResponse; onNext: () 
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center px-6 text-center text-white"
+      role="alert"
+      className="fixed inset-0 z-50 flex flex-col items-center overflow-y-auto px-6 py-8 text-center text-white [&>:first-child]:mt-auto [&>:last-child]:mb-auto"
       style={{ background: style.bg }}
     >
       <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white/20">

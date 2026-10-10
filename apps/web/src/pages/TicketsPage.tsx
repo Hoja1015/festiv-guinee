@@ -32,7 +32,7 @@ function TicketCard({ ticket, holderName, delay }: { ticket: MyTicket; holderNam
       style={{ animationDelay: `${delay}ms` }}
     >
       {event.imageUrl ? (
-        <img src={event.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <img src={event.imageUrl} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
       ) : (
         <div className="absolute inset-0 bg-gradient-to-br from-ink-950 via-primary-700 to-primary-600" />
       )}
@@ -72,7 +72,7 @@ function TicketCard({ ticket, holderName, delay }: { ticket: MyTicket; holderNam
         <div className="mt-4 border-t border-white/10 pt-1 text-sm text-white">
           <div className="flex gap-2.5 py-2">
             <span className="w-[72px] flex-shrink-0 text-ink-300">Nom</span>
-            <span className="font-bold">{holderName}</span>
+            <span className="min-w-0 break-words font-bold">{holderName}</span>
           </div>
           <div className="flex gap-2.5 py-2">
             <span className="w-[72px] flex-shrink-0 text-ink-300">Type</span>
@@ -84,7 +84,7 @@ function TicketCard({ ticket, holderName, delay }: { ticket: MyTicket; holderNam
           </div>
           <div className="flex gap-2.5 py-2">
             <span className="w-[72px] flex-shrink-0 text-ink-300">Lieu</span>
-            <span className="font-bold">
+            <span className="min-w-0 break-words font-bold">
               {event.venue}, {event.city}
             </span>
           </div>

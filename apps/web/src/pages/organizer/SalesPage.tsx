@@ -19,11 +19,11 @@ const dateTimeFormatter = new Intl.DateTimeFormat('fr-FR', {
   minute: '2-digit',
 })
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, className = '' }: { label: string; value: string; className?: string }) {
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white p-5">
+    <div className={`rounded-2xl border border-gray-100 bg-white p-4 md:p-5 ${className}`}>
       <div className="text-[13px] font-semibold text-gray-600">{label}</div>
-      <div className="mt-1 text-2xl font-extrabold text-ink-950">{value}</div>
+      <div className="mt-1 break-words text-xl font-extrabold text-ink-950 md:text-2xl">{value}</div>
     </div>
   )
 }
@@ -57,12 +57,12 @@ function PaidOrders() {
             }`}
           >
             {data.orders.map((order) => (
-              <div key={order.orderId} className="flex items-center justify-between gap-3 px-5 py-3.5">
+              <div key={order.orderId} className="flex items-center justify-between gap-3 px-4 py-3.5 md:px-5">
                 <div className="min-w-0">
                   <div className="truncate text-sm font-bold text-ink-950">{order.customerName}</div>
-                  <div className="truncate text-xs text-gray-600">
-                    CMD-{order.orderId} · {order.eventTitle} ·{' '}
-                    {dateTimeFormatter.format(new Date(order.createdAt))}
+                  <div className="truncate text-xs text-gray-600">{order.eventTitle}</div>
+                  <div className="text-xs text-gray-600">
+                    CMD-{order.orderId} · {dateTimeFormatter.format(new Date(order.createdAt))}
                   </div>
                 </div>
                 <div className="flex-shrink-0 text-right">
@@ -130,8 +130,12 @@ export function SalesPage() {
 
       {data && (
         <>
-          <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-3">
-            <Stat label="Revenus" value={`${numberFormatter.format(data.totals.revenueGNF)} GNF`} />
+          <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5">
+            <Stat
+              label="Revenus"
+              value={`${numberFormatter.format(data.totals.revenueGNF)} GNF`}
+              className="col-span-2 md:col-span-1"
+            />
             <Stat label="Billets vendus" value={numberFormatter.format(data.totals.ticketsSold)} />
             <Stat label="Commandes payées" value={numberFormatter.format(data.totals.ordersCount)} />
           </div>
@@ -151,13 +155,13 @@ export function SalesPage() {
               <h2 className="mt-8 text-base font-extrabold text-ink-950">Par événement</h2>
               <div className="mt-3 space-y-4">
                 {data.events.slice(0, visibleEvents).map((event) => (
-                  <div key={event.eventId} className="rounded-2xl border border-gray-100 bg-white p-5">
+                  <div key={event.eventId} className="rounded-2xl border border-gray-100 bg-white p-4 md:p-5">
                     <div className="flex flex-wrap items-start justify-between gap-2">
-                      <div>
-                        <div className="text-[15px] font-extrabold text-ink-950">{event.title}</div>
+                      <div className="min-w-0">
+                        <div className="break-words text-[15px] font-extrabold text-ink-950">{event.title}</div>
                         <div className="text-xs text-gray-600">{dateFormatter.format(new Date(event.date))}</div>
                       </div>
-                      <div className="text-right">
+                      <div className="w-full text-left sm:w-auto sm:text-right">
                         <div className="text-lg font-extrabold text-ink-950">
                           {numberFormatter.format(event.revenueGNF)} GNF
                         </div>
