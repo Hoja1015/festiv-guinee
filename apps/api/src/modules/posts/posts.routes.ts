@@ -11,8 +11,9 @@ postsRoutes.get('/', optionalAuth, postsController.list)
 postsRoutes.get('/:id', optionalAuth, postsController.getById)
 postsRoutes.get('/:id/comments', postsController.listComments)
 
-// Publier / supprimer une publication : organisateurs uniquement.
+// Publier / modifier / supprimer une publication : organisateurs uniquement.
 postsRoutes.post('/', requireAuth, requireRole('ORGANIZER'), postsController.create)
+postsRoutes.patch('/:id', requireAuth, requireRole('ORGANIZER'), postsController.update)
 postsRoutes.delete('/:id', requireAuth, requireRole('ORGANIZER'), postsController.remove)
 
 // Réagir : n'importe quel utilisateur connecté.

@@ -1,6 +1,6 @@
 import { prisma } from '../../lib/prisma.js'
 import type { Prisma } from '@prisma/client'
-import type { CreatePostInput } from './posts.schema.js'
+import type { CreatePostInput, UpdatePostInput } from './posts.schema.js'
 
 const postInclude = {
   author: { select: { id: true, fullName: true } },
@@ -31,6 +31,10 @@ export const postsRepository = {
 
   create(authorId: number, data: CreatePostInput) {
     return prisma.post.create({ data: { ...data, authorId }, include: postInclude })
+  },
+
+  update(id: number, data: UpdatePostInput) {
+    return prisma.post.update({ where: { id }, data, include: postInclude })
   },
 
   delete(id: number) {

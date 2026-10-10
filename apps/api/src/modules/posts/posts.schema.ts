@@ -7,6 +7,16 @@ export const createPostSchema = z.object({
   eventId: z.number().int().positive().optional(),
 })
 
+// Modification : tous les champs sont facultatifs, mais il en faut au moins un.
+// `null` retire l'image ou le lien vers l'événement.
+export const updatePostSchema = z
+  .object({
+    content: z.string().trim().min(1, 'Le texte de la publication est requis').max(2000, '2000 caractères maximum').optional(),
+    imageUrl: z.string().url('URL d\'image invalide').nullable().optional(),
+    eventId: z.number().int().positive().nullable().optional(),
+  })
+  .refine((value) => Object.keys(value).length > 0, { message: 'Aucune modification fournie' })
+
 export const createCommentSchema = z.object({
   content: z.string().trim().min(1, 'Le commentaire est vide').max(1000, '1000 caractères maximum'),
 })
@@ -20,3 +30,4 @@ export const listPostsQuerySchema = z.object({
 })
 
 export type CreatePostInput = z.infer<typeof createPostSchema>
+export type UpdatePostInput = z.infer<typeof updatePostSchema>

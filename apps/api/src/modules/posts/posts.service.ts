@@ -1,7 +1,7 @@
 import { postsRepository, type PostRow } from './posts.repository.js'
 import { eventsService } from '../events/events.service.js'
 import { NotFoundError, ForbiddenError, ValidationError } from '../../shared/errors.js'
-import type { CreatePostInput } from './posts.schema.js'
+import type { CreatePostInput, UpdatePostInput } from './posts.schema.js'
 
 const MAX_COMMENTS = 100
 
@@ -62,6 +62,23 @@ export const postsService = {
     }
     const post = await postsRepository.create(authorId, input)
     return toDto(post, false)
+  },
+
+  async update(postId: number, userId: number, input: UpdatePostInput) {
+    const post = await getExistingPost(postId)
+    if (post.authorId !== userId) {
+      throw new ForbiddenError('Vous ne pouvez modifier que vos propres publications')
+    }
+    // Un nouveau lien vers un événement obéit aux mêmes règles qu'à la création.
+    if (input.eventId !== undefined && input.eventId !== null) {
+      const event = await eventsService.assertOwnership(input.eventId, userId)
+      if (event.status !== 'PUBLISHED') {
+        throw new ValidationError('Une publication ne peut renvoyer qu\'à un événement publié')
+      }
+    }
+    const updated = await postsRepository.update(postId, input)
+    const liked = await likedIdsFor(userId, [postId])
+    return toDto(updated, liked.has(postId))
   },
 
   async remove(postId: number, userId: number) {

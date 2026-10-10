@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express'
 import { postsService } from './posts.service.js'
-import { createPostSchema, createCommentSchema, listPostsQuerySchema } from './posts.schema.js'
+import { createPostSchema, updatePostSchema, createCommentSchema, listPostsQuerySchema } from './posts.schema.js'
 import { ValidationError } from '../../shared/errors.js'
 
 // Les @types/express récents typent les params en string | string[].
@@ -29,6 +29,12 @@ export const postsController = {
     const input = createPostSchema.parse(req.body)
     const post = await postsService.create(req.user!.userId, input)
     res.status(201).json({ post })
+  },
+
+  async update(req: Request, res: Response) {
+    const input = updatePostSchema.parse(req.body)
+    const post = await postsService.update(parseId(req.params.id), req.user!.userId, input)
+    res.json({ post })
   },
 
   async remove(req: Request, res: Response) {
