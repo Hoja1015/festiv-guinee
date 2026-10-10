@@ -80,9 +80,6 @@ function Hero() {
 
       <div className="mx-auto flex min-h-[500px] max-w-6xl flex-col justify-end px-6 pb-10 pt-24 md:min-h-[560px] md:justify-center md:px-10 md:pb-16 md:pt-20">
         <div className="animate-fade-in-up md:max-w-2xl">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wide text-accent-400 backdrop-blur">
-            Billetterie des festivals de Guinée
-          </span>
 
           <h1 className="mt-5 text-4xl font-extrabold leading-[1.1] text-white md:text-6xl">
             Vivez les plus belles <span className="text-accent-400">nuits</span> de Guinée

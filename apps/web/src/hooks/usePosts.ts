@@ -106,6 +106,24 @@ export function useCreatePost() {
   })
 }
 
+export interface UpdatePostPayload {
+  content?: string
+  // null retire l'image ou le lien vers l'événement
+  imageUrl?: string | null
+  eventId?: number | null
+}
+
+export function useUpdatePost() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ postId, payload }: { postId: number; payload: UpdatePostPayload }) =>
+      api.patch<{ post: Post }>(`/posts/${postId}`, payload).then((r) => r.post),
+    // L'API renvoie la publication à jour : on remplace la copie en cache
+    // (fil et page de détail), sans recharger tout le fil.
+    onSuccess: (post) => updatePostInCaches(queryClient, post.id, () => post),
+  })
+}
+
 export function useDeletePost() {
   const queryClient = useQueryClient()
   return useMutation({

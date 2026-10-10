@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useCurrentUser } from '../../hooks/useAuth'
-import { useToggleLike, useDeletePost, type Post } from '../../hooks/usePosts'
+import { useToggleLike, useDeletePost, useUpdatePost, type Post } from '../../hooks/usePosts'
 import { formatRelativeTime } from '../../lib/relativeTime'
 import { HeartIcon, CommentIcon, ShareIcon } from '../FeedIcons'
+import { ConfirmDialog } from '../ConfirmDialog'
 
 interface PostCardProps {
   post: Post
@@ -11,15 +12,53 @@ interface PostCardProps {
   detail?: boolean
   // Bouton « Supprimer » (back-office organisateur, sur ses propres publications).
   canDelete?: boolean
+  // Bouton « Modifier » : par défaut visible dès que la suppression l'est.
+  canEdit?: boolean
 }
 
-export function PostCard({ post, detail = false, canDelete = false }: PostCardProps) {
+const MAX_CONTENT_LENGTH = 2000
+
+export function PostCard({ post, detail = false, canDelete = false, canEdit = canDelete }: PostCardProps) {
   const navigate = useNavigate()
   const location = useLocation()
   const { data: user } = useCurrentUser()
   const toggleLike = useToggleLike()
   const deletePost = useDeletePost()
+  const updatePost = useUpdatePost()
   const [shareFeedback, setShareFeedback] = useState<string | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(post.content)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // À l'ouverture de l'édition, le curseur se place à la fin du texte.
+  useEffect(() => {
+    if (!editing) return
+    const el = textareaRef.current
+    if (!el) return
+    el.focus()
+    el.setSelectionRange(el.value.length, el.value.length)
+  }, [editing])
+
+  function startEdit() {
+    updatePost.reset()
+    setDraft(post.content)
+    setEditing(true)
+  }
+
+  function cancelEdit() {
+    setEditing(false)
+    setDraft(post.content)
+  }
+
+  function saveEdit() {
+    const content = draft.trim()
+    if (content === '' || content === post.content) return
+    updatePost.mutate({ postId: post.id, payload: { content } }, { onSuccess: () => setEditing(false) })
+  }
+
+  const trimmedDraft = draft.trim()
+  const canSave = trimmedDraft !== '' && trimmedDraft !== post.content && !updatePost.isPending
 
   const postUrl = `${window.location.origin}/publications/${post.id}`
 
@@ -57,9 +96,7 @@ export function PostCard({ post, detail = false, canDelete = false }: PostCardPr
   }
 
   function handleDelete() {
-    if (window.confirm('Supprimer cette publication ? Ses likes et commentaires seront supprimés aussi.')) {
-      deletePost.mutate(post.id)
-    }
+    deletePost.mutate(post.id, { onSettled: () => setConfirmDelete(false) })
   }
 
   const actionClass =
@@ -75,9 +112,19 @@ export function PostCard({ post, detail = false, canDelete = false }: PostCardPr
           <div className="truncate text-sm font-bold text-ink-950">{post.author.fullName}</div>
           <div className="text-xs text-gray-400">{formatRelativeTime(post.createdAt)}</div>
         </div>
+        {canEdit && !editing && (
+          <button
+            type="button"
+            onClick={startEdit}
+            className="rounded-lg px-2.5 py-1.5 text-xs font-bold text-gray-400 transition hover:bg-primary-600/10 hover:text-primary-600"
+          >
+            Modifier
+          </button>
+        )}
         {canDelete && (
           <button
-            onClick={handleDelete}
+            type="button"
+            onClick={() => setConfirmDelete(true)}
             disabled={deletePost.isPending}
             className="rounded-lg px-2.5 py-1.5 text-xs font-bold text-gray-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
           >
@@ -86,7 +133,56 @@ export function PostCard({ post, detail = false, canDelete = false }: PostCardPr
         )}
       </div>
 
-      <p className="whitespace-pre-line break-words px-4 text-[15px] leading-relaxed text-ink-950">{post.content}</p>
+      {editing ? (
+        <div className="px-4">
+          <label htmlFor={`post-edit-${post.id}`} className="sr-only">
+            Texte de la publication
+          </label>
+          <textarea
+            id={`post-edit-${post.id}`}
+            ref={textareaRef}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') cancelEdit()
+            }}
+            maxLength={MAX_CONTENT_LENGTH}
+            rows={5}
+            disabled={updatePost.isPending}
+            className="w-full resize-y rounded-xl border border-gray-200 px-3.5 py-3 text-[15px] leading-relaxed text-ink-950 outline-none transition focus:border-primary-600 disabled:opacity-60"
+          />
+          <div className="mt-1 text-right text-xs text-gray-400">
+            {draft.length} / {MAX_CONTENT_LENGTH}
+          </div>
+
+          {updatePost.isError && (
+            <p className="mt-2 rounded-xl bg-red-50 px-3.5 py-2 text-sm text-red-600">
+              {updatePost.error instanceof Error ? updatePost.error.message : 'Impossible de modifier la publication.'}
+            </p>
+          )}
+
+          <div className="mt-3 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={cancelEdit}
+              disabled={updatePost.isPending}
+              className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-bold text-ink-950 transition hover:bg-gray-50 disabled:opacity-50"
+            >
+              Annuler
+            </button>
+            <button
+              type="button"
+              onClick={saveEdit}
+              disabled={!canSave}
+              className="rounded-xl bg-primary-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-primary-700 disabled:opacity-50"
+            >
+              {updatePost.isPending ? 'Enregistrement…' : 'Enregistrer'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <p className="whitespace-pre-line break-words px-4 text-[15px] leading-relaxed text-ink-950">{post.content}</p>
+      )}
 
       {post.event && (
         <Link
@@ -130,6 +226,17 @@ export function PostCard({ post, detail = false, canDelete = false }: PostCardPr
           {shareFeedback ?? 'Partager'}
         </button>
       </div>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        variant="danger"
+        title="Supprimer cette publication ?"
+        message="Ses likes et ses commentaires seront supprimés aussi. Cette action est définitive."
+        confirmLabel="Supprimer"
+        loading={deletePost.isPending}
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmDelete(false)}
+      />
     </article>
   )
 }

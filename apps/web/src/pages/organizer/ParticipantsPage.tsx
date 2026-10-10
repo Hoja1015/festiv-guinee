@@ -190,8 +190,40 @@ export function ParticipantsPage() {
                     : 'Aucun billet vendu pour cet événement pour le moment.'}
                 </p>
               ) : (
+                <>
+                {/* Mobile : une carte par participant, sans défilement horizontal */}
+                <ul
+                  className={`mt-4 space-y-2.5 transition-opacity md:hidden ${
+                    isPlaceholderData ? 'opacity-60' : ''
+                  }`}
+                >
+                  {participants.map((p) => (
+                    <li key={p.ticketId} className="rounded-2xl border border-gray-100 bg-white p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-extrabold text-ink-950">{p.customerName}</div>
+                          <div className="truncate text-xs text-gray-600">{p.customerEmail}</div>
+                        </div>
+                        <span
+                          className="flex-shrink-0 text-xs font-bold"
+                          style={{ color: STATUS_LABEL[p.status].color }}
+                        >
+                          ● {STATUS_LABEL[p.status].label}
+                        </span>
+                      </div>
+                      <div className="mt-2.5 flex items-center justify-between text-xs">
+                        <span className="rounded-full bg-primary-600/10 px-2.5 py-1 font-bold text-primary-700">
+                          {ticketTypeLabel(p.ticketType)}
+                        </span>
+                        <span className="font-semibold text-gray-600">Billet #{p.ticketId}</span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+
+                {/* Ordinateur : tableau */}
                 <div
-                  className={`mt-4 overflow-x-auto rounded-2xl border border-gray-100 bg-white transition-opacity ${
+                  className={`mt-4 hidden overflow-x-auto rounded-2xl border border-gray-100 bg-white transition-opacity md:block ${
                     isPlaceholderData ? 'opacity-60' : ''
                   }`}
                 >
@@ -225,6 +257,7 @@ export function ParticipantsPage() {
                     </tbody>
                   </table>
                 </div>
+                </>
               )}
 
               {pagination.totalPages > 1 && (

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { OrganizerLayout } from '../../components/organizer/OrganizerLayout'
+import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { useAssignStaff, useMyTeam, useRemoveStaff, type TeamEvent } from '../../hooks/useTeam'
 
 const dateFormatter = new Intl.DateTimeFormat('fr-FR', {
@@ -55,16 +56,16 @@ function EventTeamCard({ event }: { event: TeamEvent }) {
   const [email, setEmail] = useState('')
   const assign = useAssignStaff()
   const remove = useRemoveStaff()
+  const [memberToRemove, setMemberToRemove] = useState<{ assignmentId: number; name: string } | null>(null)
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
     assign.mutate({ eventId: event.id, email }, { onSuccess: () => setEmail('') })
   }
 
-  function handleRemove(assignmentId: number, name: string) {
-    if (window.confirm(`Retirer ${name} de cet événement ?`)) {
-      remove.mutate(assignmentId)
-    }
+  function confirmRemove() {
+    if (!memberToRemove) return
+    remove.mutate(memberToRemove.assignmentId, { onSettled: () => setMemberToRemove(null) })
   }
 
   return (
@@ -84,7 +85,7 @@ function EventTeamCard({ event }: { event: TeamEvent }) {
               </div>
               <button
                 type="button"
-                onClick={() => handleRemove(member.assignmentId, member.fullName)}
+                onClick={() => setMemberToRemove({ assignmentId: member.assignmentId, name: member.fullName })}
                 disabled={remove.isPending}
                 className="flex-shrink-0 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
               >
@@ -128,6 +129,17 @@ function EventTeamCard({ event }: { event: TeamEvent }) {
           {assign.error instanceof Error ? assign.error.message : "Impossible d'affecter cet agent."}
         </p>
       )}
+
+      <ConfirmDialog
+        open={memberToRemove !== null}
+        variant="danger"
+        title="Retirer cet agent ?"
+        message={`${memberToRemove?.name ?? 'Cet agent'} ne pourra plus scanner les billets de « ${event.title} ».`}
+        confirmLabel="Retirer"
+        loading={remove.isPending}
+        onConfirm={confirmRemove}
+        onCancel={() => setMemberToRemove(null)}
+      />
     </div>
   )
 }

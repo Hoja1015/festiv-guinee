@@ -106,6 +106,20 @@ export function PaymentPage() {
     <div className="mx-auto max-w-2xl animate-fade-in-up px-5 pb-10 pt-5 md:pt-10">
       <h1 className="text-xl font-extrabold text-ink-950 md:text-2xl">Paiement</h1>
 
+      <div
+        role="note"
+        className="mt-4 flex items-start gap-3 rounded-2xl border border-accent-400/60 bg-accent-400/15 px-4 py-3"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 flex-shrink-0 text-amber-700" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 8v5M12 16.5v.01" />
+        </svg>
+        <p className="text-sm leading-relaxed text-ink-950">
+          <span className="font-extrabold">Mode démonstration.</span> Le paiement est simulé : aucun argent n'est débité
+          et les billets générés ne sont pas valables pour un vrai événement.
+        </p>
+      </div>
+
       <div className="mt-5 rounded-2xl border border-gray-100 p-4">
         <div className="text-sm font-bold text-ink-950">{state.eventTitle}</div>
         <div className="mt-2 space-y-1 text-xs text-gray-500">
