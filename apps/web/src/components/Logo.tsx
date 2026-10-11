@@ -10,7 +10,7 @@ export function Logo({ variant = 'light', className = '' }: LogoProps) {
         variant === 'light' ? 'text-white' : 'text-ink-950'
       } ${className}`}
     >
-      Festiv<span className="text-accent-400">'</span>Guinée
+      MGS<span className="text-accent-400">'</span>Events
     </span>
   )
 }
